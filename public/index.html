@@ -455,7 +455,7 @@ function loadRecords() {
 function saveRecords(obj) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 }
-function saveRecord(difficulty, ms) {
+async function saveRecord(difficulty, ms) {
   // 原有的本地保存逻辑
   const rec = loadRecords();
   if (!rec[difficulty]) rec[difficulty] = { best: null, history: [] };
@@ -529,6 +529,7 @@ difficultyEl.addEventListener('change', ()=> {
 /* ====== 页面初始化 ====== */
 function init() {
   // render empty board (all editable)
+  console.log('init() running')
   puzzle = createEmptyBoard();
   givenMask = createEmptyBoard().map(row=>row.map(()=>false));
   renderBoard(puzzle, givenMask);
@@ -537,7 +538,14 @@ function init() {
 }
 init();
 
+window.saveRecordLocal = saveRecord;
+
+// 可选：把 supabase 实例也放到 window，供原脚本直接使用
+//  window.supabase = supabase
+
 </script>
+
+
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
