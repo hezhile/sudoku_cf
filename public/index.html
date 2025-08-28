@@ -5,6 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>数独 Sudoku</title>
 <style>
+.changelog-details {
+  margin: 1em auto;
+  padding: 0.8em;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+  max-width: 550px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  font-size: 1em;
+}
+
+.changelog-details summary {
+  font-weight: 600;
+  font-size: 1.15em;
+  cursor: pointer;
+  outline: none;
+  padding: 0.2em 0;
+  list-style: none;
+}
+
+.changelog-details ul {
+  margin: 0.8em 0 0 1em;
+  padding: 0;
+}
+
+.changelog-details li {
+  line-height: 1.7;
+  margin-bottom: 0.5em;
+  word-break: break-word;
+}
+
+@media (max-width: 600px) {
+  .changelog-details {
+    max-width: 98vw;
+    padding: 0.6em;
+    font-size: 0.98em;
+  }
+  .changelog-details summary {
+    font-size: 1em;
+  }
+}
   body { font-family: Arial, Helvetica, sans-serif; display:flex; flex-direction:column; align-items:center; padding:20px; background:#f6f8fa; }
   h1 { margin-bottom:5px; }
   #controls { margin:10px 0 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -53,6 +94,12 @@
     <button id="resetBtn">重置</button>
     <button id="checkBtn">检查答案</button>
     <span id="status">用时：<span id="timer">00:00.00</span></span>
+    <!-- 放在 #controls 区里 -->
+    <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;">
+    <button id="loginBtn">发送登录链接</button>
+    <span id="userInfo" class="small" style="margin-left:8px;"></span>
+    <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
+    <button id="syncBtn" style="display:none;padding:6px 8px;">同步本地记录到云端</button>
   </div>
 
   <div id="board" aria-label="数独棋盘"></div>
@@ -449,7 +496,8 @@ function loadRecords() {
 function saveRecords(obj) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 }
-function saveRecord(difficulty, ms) {
+async function saveRecord(difficulty, ms) {
+  // 原有的本地保存逻辑
   const rec = loadRecords();
   if (!rec[difficulty]) rec[difficulty] = { best: null, history: [] };
   rec[difficulty].history.push({ time: ms, at: Date.now() });
@@ -457,6 +505,34 @@ function saveRecord(difficulty, ms) {
     rec[difficulty].best = ms;
   }
   saveRecords(rec);
+  
+  // 如果用户已登录，上传该条记录
+  // 假设你在模块脚本里有全局 supabase 实例；若不是同一作用域，你可把这段逻辑封装成函数并调用。
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // 插入远端 games
+      await supabase.from('games').insert([{
+        user_id: session.user.id,
+        difficulty,
+        duration_ms: ms,
+        success: true
+      }])
+      // 更新 best_scores（简单逻辑：如果新纪录比远端最好小就 upsert）
+      const { data: existing } = await supabase.from('best_scores')
+        .select('best_duration_ms').eq('user_id', session.user.id).eq('difficulty', difficulty).single()
+      if (!existing || ms < existing.best_duration_ms) {
+        await supabase.from('best_scores').upsert({
+          user_id: session.user.id,
+          difficulty,
+          best_duration_ms: ms,
+          achieved_at: new Date().toISOString()
+        }, { onConflict: ['user_id','difficulty'] })
+      }
+    }
+  } catch (e) {
+    console.warn('远端保存记录失败（可能网络或权限问题）', e)
+  }
 }
 function clearRecords() {
   localStorage.removeItem(STORAGE_KEY);
@@ -494,6 +570,7 @@ difficultyEl.addEventListener('change', ()=> {
 /* ====== 页面初始化 ====== */
 function init() {
   // render empty board (all editable)
+  console.log('init() running')
   puzzle = createEmptyBoard();
   givenMask = createEmptyBoard().map(row=>row.map(()=>false));
   renderBoard(puzzle, givenMask);
@@ -502,6 +579,186 @@ function init() {
 }
 init();
 
+window.saveRecordLocal = saveRecord;
+
+// 可选：把 supabase 实例也放到 window，供原脚本直接使用
+//  window.supabase = supabase
+
 </script>
+
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+// 替换为你 Supabase 项目的 URL 和 public anon key（不要在前端放 service_role key）
+const SUPABASE_URL = 'https://ywzcvxypjgazdataefbq.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3emN2eHlwamdhemRhdGFlZmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNjg0MDksImV4cCI6MjA3MTk0NDQwOX0.rRrJ1Sjat2rDu0yoIOgEHs0ZrR5hO4b6k38he57uY68'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// DOM 元素（你已在 HTML 中加入）
+const emailInput = document.getElementById('emailInput')
+const loginBtn = document.getElementById('loginBtn')
+const logoutBtn = document.getElementById('logoutBtn')
+const userInfo = document.getElementById('userInfo')
+const syncBtn = document.getElementById('syncBtn')
+
+// 当用户点击发送魔法链接
+loginBtn.addEventListener('click', async () => {
+  const email = emailInput.value.trim()
+  if (!email) { alert('请输入邮箱'); return; }
+  // 指定回跳到当前页面，必须先在 Supabase 控制台的 Redirect URLs 中登记
+  const redirectTo = window.location.href
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo }
+  })
+  if (error) {
+    console.error(error)
+    alert('发送失败：' + (error.message || error))
+  } else {
+    alert('登录邮件已发送，请查收邮箱并点击链接。')
+  }
+})
+
+// 登出
+logoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut()
+  setLoggedOutUI()
+})
+
+// 手动触发把本地记录上传到 Supabase（若已登录）
+syncBtn.addEventListener('click', async () => {
+  const session = (await supabase.auth.getSession()).data.session
+  if (!session) { alert('未登录'); return; }
+  await syncLocalRecordsToSupabase(session.user.id)
+  alert('同步完成（如果有新记录）。')
+})
+
+// 页面加载时：检查当前是否已登录并设置 UI；并监听 auth 状态变化
+async function initAuth() {
+  // 有时用户点击魔法链接回到页面后需要处理 URL 中的参数以建立 session：
+  // supabase-js 会在某些版本自动处理，但强烈建议调用 getSessionFromUrl() 如果 URL 中有 magic link token
+  try {
+    // 如果 URL 含有 `access_token` 或 magic link 参数，可以调用：
+    // await supabase.auth.getSessionFromUrl({ storeSession: true })
+    // 但为兼容不同版本，也使用下面的 getSession() 来读取当前 session
+  } catch(e) {
+    // ignore
+  }
+
+  // 读取当前 session
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session) {
+    setLoggedInUI(session.user)
+    // 登录后自动尝试同步本地记录
+    await syncLocalRecordsToSupabase(session.user.id)
+  } else {
+    setLoggedOutUI()
+  }
+
+  // 监听登录/登出事件（页面内实时更新 UI）
+  supabase.auth.onAuthStateChange((_event, state) => {
+    if (state?.user) setLoggedInUI(state.user)
+    else setLoggedOutUI()
+  })
+}
+initAuth()
+
+function setLoggedInUI(user) {
+  userInfo.textContent = user.email || user.id
+  loginBtn.style.display = 'none'
+  emailInput.style.display = 'none'
+  logoutBtn.style.display = ''
+  syncBtn.style.display = ''
+}
+function setLoggedOutUI() {
+  userInfo.textContent = ''
+  loginBtn.style.display = ''
+  emailInput.style.display = ''
+  logoutBtn.style.display = 'none'
+  syncBtn.style.display = 'none'
+}
+
+/* ====== 将本地 localStorage 里的记录上报到 Supabase ======
+   假设你本地使用的 STORAGE_KEY 与页面相同：'sudoku_records_v1'
+   我们要把历史每条作为一行插入到远端的 `games` 表里，
+   并维护 `best_scores` 表或在插入后判断并更新最佳成绩。
+*/
+const STORAGE_KEY = 'sudoku_records_v1'
+
+async function syncLocalRecordsToSupabase(userId) {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return
+  let rec
+  try { rec = JSON.parse(raw) } catch(e) { return }
+  const rowsToInsert = []
+  for (const diff of ['easy','medium','hard','expert']) {
+    const obj = rec[diff]
+    if (!obj || !obj.history || obj.history.length === 0) continue
+    // 把每条历史上传，字段名与下方 SQL 表描述要对应
+    for (const h of obj.history) {
+      rowsToInsert.push({
+        user_id: userId,
+        difficulty: diff,
+        duration_ms: h.time,
+        created_at: new Date(h.at).toISOString(),
+        success: true
+      })
+    }
+  }
+  if (rowsToInsert.length === 0) return
+
+  // 批量插入
+  const { error: insertError } = await supabase.from('games').insert(rowsToInsert)
+  if (insertError) {
+    console.error('上传记录失败', insertError)
+    return
+  }
+
+  // 可选：更新 best_scores（你也可以在 DB 侧用触发器/函数来维护）
+  for (const diff of ['easy','medium','hard','expert']) {
+    const obj = rec[diff]
+    if (!obj || !obj.history || obj.history.length === 0) continue
+    const localBest = obj.best
+    if (!localBest) continue
+    // 读取远端当前 best
+    const { data: existing, error: selErr } = await supabase
+      .from('best_scores')
+      .select('best_duration_ms')
+      .eq('user_id', userId)
+      .eq('difficulty', diff)
+      .single()
+    if (selErr && selErr.code !== 'PGRST116') {
+      console.warn('读取远端 best 失败', selErr)
+      continue
+    }
+    let shouldUpsert = false
+    if (!existing) shouldUpsert = true
+    else if (localBest < existing.best_duration_ms) shouldUpsert = true
+
+    if (shouldUpsert) {
+      const { error: upErr } = await supabase.from('best_scores').upsert({
+        user_id: userId,
+        difficulty: diff,
+        best_duration_ms: localBest,
+        achieved_at: new Date().toISOString()
+      }, { onConflict: ['user_id','difficulty'] })
+      if (upErr) console.warn('更新 best 失败', upErr)
+    }
+  }
+
+  // 如果需要：上传成功后清本地或标记为已同步。这里我们不自动清，避免用户误删数据。
+  // localStorage.removeItem(STORAGE_KEY)
+}
+
+</script>
+<details class="changelog-details">
+  <summary>Changelog（更新日志）</summary>
+  <ul>
+    <li><strong>2025-08-28 21:41</strong>：Version 0.21 利用resend发邮件，用户登录功能，开发完成</li>
+    <li><strong>2025-08-28</strong>：Version 0.21 增加用户登录功能，开发中</li>
+    <li><strong>2025-08-28</strong>：Version 0.1 游戏成绩用浏览器本地存储</li>
+  </ul>
+</details>
 </body>
 </html>
