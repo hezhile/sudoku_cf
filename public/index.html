@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>数独游戏</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; display:flex; flex-direction:column; align-items:center; padding:20px; background:#f6f8fa; }
+  h1 { margin-bottom:5px; }
+  #controls { margin:10px 0 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  select, button { padding:6px 10px; font-size:14px; }
+  #board { display:grid; grid-template-columns: repeat(9, 44px); grid-auto-rows:44px; gap:0; border:3px solid #333; background:#fff; }
+  .cell {
+    width:44px; height:44px; box-sizing:border-box;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid #999; font-size:18px; position:relative;
+  }
+  .cell:nth-child(3n) { border-right:3px solid #333; }
+  .cell:nth-child(n+19):nth-child(-n+27), .cell:nth-child(n+46):nth-child(-n+54) {
+    /* just to avoid CSS complexity for horizontal thicker lines we set via :nth-child below */
+  }
+  /* 3x3 block thicker horizontal borders */
+  .row-break { border-bottom:3px solid #333; }
+  .prefilled { background:#eee; font-weight:700; }
+  input.cell-input {
+    width:100%; height:100%; border:0; outline:0; text-align:center; font-size:18px;
+    background:transparent; caret-color:blue;
+  }
+  .conflict { background: #ffdddd !important; }
+  #status { margin-top:12px; min-height:24px; }
+  #timer { font-weight:700; margin-left:6px; }
+  #records { margin-top:14px; width:100%; max-width:540px; padding:10px; background:#fff; border:1px solid #ddd; border-radius:6px;}
+  .record-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #eee; }
+  .record-row:last-child { border-bottom:0; }
+  .small { font-size:13px; color:#666; }
+  @media (max-width:520px) {
+    #board { grid-template-columns: repeat(9, 36px); grid-auto-rows:36px; }
+    .cell { width:36px; height:36px; font-size:16px; }
+  }
+</style>
+</head>
+<body>
+  <h1>数独游戏</h1>
+  <div id="controls">
+    难度：
+    <select id="difficulty">
+      <option value="easy">简单</option>
+      <option value="medium" selected>中等</option>
+      <option value="hard">困难</option>
+      <option value="expert">专家</option>
+    </select>
+    <button id="newBtn">生成新题</button>
+    <button id="resetBtn">重置</button>
+    <button id="checkBtn">检查答案</button>
+    <span id="status">用时：<span id="timer">00:00.00</span></span>
+  </div>
+
+  <div id="board" aria-label="数独棋盘"></div>
+
+  <div id="records">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>记录（本地）</strong>
+      <button id="clearRecords" style="padding:4px 8px;">清除记录</button>
+    </div>
+    <div id="recordsList" class="small"></div>
+  </div>
+
+<script>
+/*
+  简单说明：
+  - 生成完整解法 -> 逐一挖空（保证唯一解）来得到题目
+  - 难度通过“挖空数量”控制（并在挖空过程中保证唯一解）
+  - 使用 localStorage 保存每个难度的最好时间与历史
+*/
+
+/* ====== 变量与 DOM ====== */
+const boardEl = document.getElementById('board');
+const difficultyEl = document.getElementById('difficulty');
+const newBtn = document.getElementById('newBtn');
+const resetBtn = document.getElementById('resetBtn');
+const checkBtn = document.getElementById('checkBtn');
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+const recordsList = document.getElementById('recordsList');
+const clearRecordsBtn = document.getElementById('clearRecords');
+
+let solution = null;      // 完整解（9x9 数组）
+let puzzle = null;        // 题目（带空格的 9x9）
+let givenMask = null;     // 9x9 布尔，true 表示预填（不可编辑）
+let startTime = null;
+let timerInterval = null;
+let running = false;
+
+/* 难度与挖空数量（目标空格数） */
+const difficultyHoles = {
+  easy: 36,
+  medium: 46,
+  hard: 52,
+  expert: 58
+};
+
+/* ====== 工具：复制、创建空棋盘 ====== */
+function createEmptyBoard() {
+  return Array.from({length:9},()=>Array(9).fill(0));
+}
+function cloneBoard(b) {
+  return b.map(row=>row.slice());
+}
+
+/* ====== 检查某位置放 value 是否合法（不检查0） ====== */
+function isValidPlacement(board, r, c, value) {
+  if (value === 0) return true;
+  for (let i=0;i<9;i++) {
+    if (i!==c && board[r][i] === value) return false;
+    if (i!==r && board[i][c] === value) return false;
+  }
+  const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++){
+    const rr = br+i, cc = bc+j;
+    if ((rr!==r || cc!==c) && board[rr][cc] === value) return false;
+  }
+  return true;
+}
+
+/* ====== 完整解生成（回溯） ====== */
+function shuffle(array) {
+  for (let i=array.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+function generateFullBoard() {
+  const board = createEmptyBoard();
+  const nums = [1,2,3,4,5,6,7,8,9];
+
+  function backtrack(pos=0){
+    if (pos===81) return true;
+    const r = Math.floor(pos/9), c = pos%9;
+    // 随机顺序尝试数字
+    shuffle(nums);
+    for (let n of nums) {
+      if (isValidPlacement(board, r, c, n)) {
+        board[r][c]=n;
+        if (backtrack(pos+1)) return true;
+        board[r][c]=0;
+      }
+    }
+    return false;
+  }
+  backtrack();
+  return board;
+}
+
+/* ====== 求解器（计数解的数量，超过 limit 可提前停止） ====== */
+function countSolutions(board, limit=2) {
+  const b = cloneBoard(board);
+  let count=0;
+
+  function findEmpty() {
+    for (let i=0;i<9;i++) for (let j=0;j<9;j++) if (b[i][j]===0) return [i,j];
+    return null;
+  }
+
+  function backtrack() {
+    if (count >= limit) return;
+    const pos = findEmpty();
+    if (!pos) { count++; return; }
+    const [r,c] = pos;
+    for (let n=1;n<=9;n++){
+      if (isValidPlacement(b,r,c,n)){
+        b[r][c]=n;
+        backtrack();
+        b[r][c]=0;
+        if (count >= limit) return;
+      }
+    }
+  }
+  backtrack();
+  return count;
+}
+
+/* ====== 挖空（确保唯一解） ====== */
+function digHolesFromSolution(solBoard, holesTarget) {
+  const board = cloneBoard(solBoard);
+  const positions = [];
+  for (let i=0;i<9;i++) for (let j=0;j<9;j++) positions.push([i,j]);
+  shuffle(positions);
+
+  let holes = 0;
+  for (let idx=0; idx<positions.length && holes<holesTarget; idx++){
+    const [r,c] = positions[idx];
+    if (board[r][c] === 0) continue;
+    const backup = board[r][c];
+    board[r][c] = 0;
+
+    // 检查是否仍然有唯一解
+    const solutions = countSolutions(board, 2);
+    if (solutions !== 1) {
+      // 恢复，不挖
+      board[r][c] = backup;
+    } else {
+      holes++;
+    }
+  }
+  return board;
+}
+
+/* ====== 渲染棋盘 ====== */
+function renderBoard(board, given) {
+  boardEl.innerHTML = '';
+  for (let r=0;r<9;r++){
+    for (let c=0;c<9;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      // 添加 thicker bottom border after rows 3 and 6
+      if (r===2 || r===5) cell.style.borderBottom = '3px solid #333';
+      // 添加 thicker right border after columns 3 and 6
+      if (c===2 || c===5) cell.style.borderRight = '3px solid #333';
+
+      if (given[r][c]) {
+        cell.classList.add('prefilled');
+        cell.textContent = board[r][c] || '';
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'numeric';
+        input.maxLength = 1;
+        input.className = 'cell-input';
+        input.dataset.r = r;
+        input.dataset.c = c;
+        input.value = board[r][c] ? board[r][c] : '';
+        input.addEventListener('input', onCellInput);
+        input.addEventListener('keydown', onCellKeyDown);
+        cell.appendChild(input);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+  updateConflicts();
+}
+
+/* ====== 获取当前用户填写的棋盘 ====== */
+function readUserBoard() {
+  const b = createEmptyBoard();
+  const inputs = boardEl.querySelectorAll('input.cell-input');
+  inputs.forEach(inp=>{
+    const r = +inp.dataset.r, c = +inp.dataset.c;
+    const v = parseInt(inp.value);
+    b[r][c] = (!isNaN(v) && v>=1 && v<=9) ? v : 0;
+  });
+  // also include prefilled
+  for (let r=0;r<9;r++) for (let c=0;c<9;c++) if (givenMask[r][c]) b[r][c] = puzzle[r][c];
+  return b;
+}
+
+/* ====== 单元格输入处理 ====== */
+function onCellInput(e) {
+  const input = e.target;
+  // 只保留 1-9
+  const raw = input.value.replace(/[^\d]/g,'');
+  let v = raw.slice(0,1);
+  if (v === '0') v = '';
+  input.value = v;
+  updateConflicts();
+  checkAutoComplete();
+}
+function onCellKeyDown(e) {
+  // 处理退格、上下左右输入便捷
+  const k = e.key;
+  if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown') {
+    e.preventDefault();
+    moveFocus(k, e.target);
+  }
+}
+function moveFocus(dir, input) {
+  const r = +input.dataset.r, c = +input.dataset.c;
+  let nr=r, nc=c;
+  if (dir==='ArrowLeft') nc = (c+8)%9;
+  if (dir==='ArrowRight') nc = (c+1)%9;
+  if (dir==='ArrowUp') nr = (r+8)%9;
+  if (dir==='ArrowDown') nr = (r+1)%9;
+  // find next editable input at (nr,nc) or move until editable
+  for (let i=0;i<9;i++){
+    const rr = (nr + Math.floor(i/9))%9;
+    const cc = (nc + i)%9;
+    const selector = `input.cell-input[data-r="${rr}"][data-c="${cc}"]`;
+    const next = boardEl.querySelector(selector);
+    if (next) { next.focus(); break; }
+  }
+}
+
+/* ====== 冲突高亮 ====== */
+function updateConflicts() {
+  // 清除所有冲突样式
+  const cells = boardEl.querySelectorAll('.cell');
+  cells.forEach(c => c.classList.remove('conflict'));
+
+  const b = readUserBoard();
+
+  for (let r=0;r<9;r++) {
+    for (let c=0;c<9;c++) {
+      const v = b[r][c];
+      if (!v) continue;
+      // 检查行、列、块是否有重复
+      for (let i=0;i<9;i++){
+        if (i!==c && b[r][i]===v) {
+          markCell(r,c); markCell(r,i);
+        }
+        if (i!==r && b[i][c]===v) {
+          markCell(r,c); markCell(i,c);
+        }
+      }
+      const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+      for (let i=0;i<3;i++) for (let j=0;j<3;j++){
+        const rr = br+i, cc = bc+j;
+        if ((rr!==r || cc!==c) && b[rr][cc] === v) {
+          markCell(r,c); markCell(rr,cc);
+        }
+      }
+    }
+  }
+
+  function markCell(r,c){
+    const idx = r*9 + c;
+    const el = boardEl.children[idx];
+    if (el) el.classList.add('conflict');
+  }
+}
+
+/* ====== 生成、重置、开始/停止计时 ====== */
+function startTimer() {
+  startTime = Date.now();
+  timerEl.textContent = formatTime(0);
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(()=> {
+    const elapsed = Date.now() - startTime;
+    timerEl.textContent = formatTime(elapsed);
+  }, 100);
+  running = true;
+}
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  running = false;
+}
+function formatTime(ms) {
+  const totalCentis = Math.floor(ms/10);
+  const centis = totalCentis % 100;
+  const totalSeconds = Math.floor(totalCentis/100);
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds/60);
+  return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(centis).padStart(2,'0')}`;
+}
+
+/* ====== 生成新题 ====== */
+async function generateNewPuzzle() {
+  stopTimer();
+  timerEl.textContent = '生成中...';
+  await new Promise(r=>setTimeout(r,50)); // 让 UI 有响应
+  const diff = difficultyEl.value;
+  const holesTarget = difficultyHoles[diff] || 46;
+
+  solution = generateFullBoard();
+  const attemptedPuzzle = digHolesFromSolution(solution, holesTarget);
+  // 若挖空失败（unique check 过于严格导致空不够），就接受当前挖到的
+  puzzle = attemptedPuzzle;
+  // given mask：非0为预填
+  givenMask = createEmptyBoard().map((row, r)=>row.map((_,c)=>puzzle[r][c] !== 0));
+  renderBoard(puzzle, givenMask);
+  timerEl.textContent = '00:00.00';
+  startTimer();
+}
+
+/* ====== 重置（回到题目初始状态） ====== */
+function resetPuzzle() {
+  stopTimer();
+  if (!puzzle) return;
+  renderBoard(puzzle, givenMask);
+  timerEl.textContent = '00:00.00';
+  startTimer();
+}
+
+/* ====== 检查答案（并在完成时记录时间） ====== */
+function checkSolution() {
+  if (!puzzle) { alert('请先生成题目'); return; }
+  const user = readUserBoard();
+  // 简单判断是否存在空
+  for (let r=0;r<9;r++) for (let c=0;c<9;c++) {
+    if (user[r][c] === 0) {
+      alert('还有空格未填写。');
+      return;
+    }
+  }
+  // 检查是否每格合法
+  for (let r=0;r<9;r++) for (let c=0;c<9;c++) {
+    if (!isValidPlacement(user,r,c,user[r][c])) {
+      alert('存在冲突，答案不正确。');
+      updateConflicts();
+      return;
+    }
+  }
+  // 可选：和解答（solution）比对（solution 可能已存在）
+  let solved = true;
+  if (solution) {
+    for (let r=0;r<9;r++) for (let c=0;c<9;c++) {
+      if (user[r][c] !== solution[r][c]) solved = false;
+    }
+  } else {
+    // 若没有保存 solution，则尝试求解并比较唯一性
+    const b = cloneBoard(user);
+    const solCount = countSolutions(b, 2);
+    if (solCount !== 1) solved = false;
+  }
+
+  if (solved) {
+    stopTimer();
+    const elapsed = Date.now() - startTime;
+    const diff = difficultyEl.value;
+    saveRecord(diff, elapsed);
+    alert('恭喜你，完成了！用时：' + formatTime(elapsed));
+    renderRecords();
+  } else {
+    alert('答案与标准解不一致或不唯一。');
+  }
+}
+
+/* ====== 自动完成检测（当全部填写时自动触发检查） ====== */
+function checkAutoComplete() {
+  const user = readUserBoard();
+  for (let r=0;r<9;r++) for (let c=0;c<9;c++) {
+    if (user[r][c] === 0) return;
+  }
+  // 若全填且无冲突，则自动检查解是否正确
+  let hasConflict = !!boardEl.querySelector('.conflict');
+  if (!hasConflict) {
+    // 触发完成判定（但不必弹出太多重复提示）
+    checkSolution();
+  }
+}
+
+/* ====== 记录保存（localStorage） ====== */
+const STORAGE_KEY = 'sudoku_records_v1';
+function loadRecords() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch(e) { return {}; }
+}
+function saveRecords(obj) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+}
+function saveRecord(difficulty, ms) {
+  const rec = loadRecords();
+  if (!rec[difficulty]) rec[difficulty] = { best: null, history: [] };
+  rec[difficulty].history.push({ time: ms, at: Date.now() });
+  if (!rec[difficulty].best || ms < rec[difficulty].best) {
+    rec[difficulty].best = ms;
+  }
+  saveRecords(rec);
+}
+function clearRecords() {
+  localStorage.removeItem(STORAGE_KEY);
+  renderRecords();
+}
+
+/* ====== 渲染记录 ====== */
+function renderRecords() {
+  const rec = loadRecords();
+  const diffs = ['easy','medium','hard','expert'];
+  recordsList.innerHTML = diffs.map(d=>{
+    const obj = rec[d];
+    if (!obj) return `<div class="record-row"><div>${labelOf(d)}</div><div class="small">无记录</div></div>`;
+    const best = formatTime(obj.best);
+    const last = obj.history.length ? obj.history[obj.history.length-1].time : null;
+    const lastStr = last ? formatTime(last) : '—';
+    return `<div class="record-row"><div>${labelOf(d)} <span class="small">（最近：${lastStr}）</span></div><div>最好：${best}</div></div>`;
+  }).join('');
+}
+function labelOf(d) {
+  return d==='easy'?'简单': d==='medium'?'中等' : d==='hard'?'困难':'专家';
+}
+
+/* ====== 事件绑定 ====== */
+newBtn.addEventListener('click', ()=>generateNewPuzzle());
+resetBtn.addEventListener('click', ()=>resetPuzzle());
+checkBtn.addEventListener('click', ()=>checkSolution());
+clearRecordsBtn.addEventListener('click', ()=>{ if (confirm('确定清除所有本地记录？')) clearRecords(); });
+
+difficultyEl.addEventListener('change', ()=> {
+  // 选择难度后生成新题（也可由用户手动点击生成）
+  // generateNewPuzzle();
+});
+
+/* ====== 页面初始化 ====== */
+function init() {
+  // render empty board (all editable)
+  puzzle = createEmptyBoard();
+  givenMask = createEmptyBoard().map(row=>row.map(()=>false));
+  renderBoard(puzzle, givenMask);
+  renderRecords();
+  timerEl.textContent = '00:00.00';
+}
+init();
+
+</script>
+</body>
+</html>
