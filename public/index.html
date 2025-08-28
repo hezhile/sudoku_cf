@@ -456,6 +456,7 @@ function saveRecords(obj) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 }
 function saveRecord(difficulty, ms) {
+  // 原有的本地保存逻辑
   const rec = loadRecords();
   if (!rec[difficulty]) rec[difficulty] = { best: null, history: [] };
   rec[difficulty].history.push({ time: ms, at: Date.now() });
@@ -463,6 +464,34 @@ function saveRecord(difficulty, ms) {
     rec[difficulty].best = ms;
   }
   saveRecords(rec);
+  
+  // 如果用户已登录，上传该条记录
+  // 假设你在模块脚本里有全局 supabase 实例；若不是同一作用域，你可把这段逻辑封装成函数并调用。
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // 插入远端 games
+      await supabase.from('games').insert([{
+        user_id: session.user.id,
+        difficulty,
+        duration_ms: ms,
+        success: true
+      }])
+      // 更新 best_scores（简单逻辑：如果新纪录比远端最好小就 upsert）
+      const { data: existing } = await supabase.from('best_scores')
+        .select('best_duration_ms').eq('user_id', session.user.id).eq('difficulty', difficulty).single()
+      if (!existing || ms < existing.best_duration_ms) {
+        await supabase.from('best_scores').upsert({
+          user_id: session.user.id,
+          difficulty,
+          best_duration_ms: ms,
+          achieved_at: new Date().toISOString()
+        }, { onConflict: ['user_id','difficulty'] })
+      }
+    }
+  } catch (e) {
+    console.warn('远端保存记录失败（可能网络或权限问题）', e)
+  }
 }
 function clearRecords() {
   localStorage.removeItem(STORAGE_KEY);
