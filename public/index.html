@@ -78,6 +78,16 @@
     #board { grid-template-columns: repeat(9, 36px); grid-auto-rows:36px; }
     .cell { width:36px; height:36px; font-size:16px; }
   }
+  body.dark {
+  background: #181a1b;
+  color: #eee;
+}
+body.dark #board { background: #222; border-color: #666; }
+body.dark .cell { background: #222; border-color: #555; color: #eee; }
+body.dark .prefilled { background: #333; color: #fff; }
+body.dark .conflict { background: #5c2323 !important; }
+body.dark #records { background: #222; border-color: #444; }
+body.dark .changelog-details { background: #222; border-color: #444; color: #ccc; }
 </style>
 </head>
 <body>
@@ -100,6 +110,7 @@
     <span id="userInfo" class="small" style="margin-left:8px;"></span>
     <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
     <button id="syncBtn" style="display:none;padding:6px 8px;">同步本地记录到云端</button>
+    <button id="themeBtn" style="padding:6px 10px;">切换主题</button>
   </div>
 
   <div id="board" aria-label="数独棋盘"></div>
@@ -130,6 +141,7 @@ const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const recordsList = document.getElementById('recordsList');
 const clearRecordsBtn = document.getElementById('clearRecords');
+const themeBtn = document.getElementById('themeBtn');
 
 let solution = null;      // 完整解（9x9 数组）
 let puzzle = null;        // 题目（带空格的 9x9）
@@ -561,6 +573,10 @@ newBtn.addEventListener('click', ()=>generateNewPuzzle());
 resetBtn.addEventListener('click', ()=>resetPuzzle());
 checkBtn.addEventListener('click', ()=>checkSolution());
 clearRecordsBtn.addEventListener('click', ()=>{ if (confirm('确定清除所有本地记录？')) clearRecords(); });
+themeBtn.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  themeBtn.textContent = document.body.classList.contains('dark') ? '切换为亮色' : '切换为暗色';
+});
 
 difficultyEl.addEventListener('change', ()=> {
   // 选择难度后生成新题（也可由用户手动点击生成）
