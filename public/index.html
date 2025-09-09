@@ -509,25 +509,22 @@ async function saveRecord(difficulty, ms) {
   // 原有的本地保存逻辑
   const rec = loadRecords();
   if (!rec[difficulty]) rec[difficulty] = { best: null, history: [] };
-  rec[difficulty].history.push({ time: ms, at: Date.now() });
+  
+  // 添加新记录，默认未同步
+  const newRecord = { time: ms, at: Date.now(), synced: false };
+  rec[difficulty].history.push(newRecord);
+  
   if (!rec[difficulty].best || ms < rec[difficulty].best) {
     rec[difficulty].best = ms;
   }
   saveRecords(rec);
   
-  // 如果用户已登录，上传该条记录
-  // 假设你在模块脚本里有全局 supabase 实例；若不是同一作用域，你可把这段逻辑封装成函数并调用。
+  // 如果用户已登录，立即上传并标记为已同步
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      // 插入远端 games
-      await supabase.from('games').insert([{
-        user_id: session.user.id,
-        difficulty,
-        duration_ms: ms,
-        success: true
-      }])
-      // 更新 best_scores（简单逻辑：如果新纪录比远端最好小就 upsert）
+      await uploadSingleRecord(session.user.id, difficulty, newRecord);
+      // 更新 best_scores
       const { data: existing } = await supabase.from('best_scores')
         .select('best_duration_ms').eq('user_id', session.user.id).eq('difficulty', difficulty).single()
       if (!existing || ms < existing.best_duration_ms) {
@@ -538,6 +535,10 @@ async function saveRecord(difficulty, ms) {
           achieved_at: new Date().toISOString()
         }, { onConflict: ['user_id','difficulty'] })
       }
+      
+      // 标记为已同步并保存
+      newRecord.synced = true;
+      saveRecords(rec);
     }
   } catch (e) {
     console.warn('远端保存记录失败（可能网络或权限问题）', e)
@@ -589,6 +590,7 @@ function init() {
 init();
 
 window.saveRecordLocal = saveRecord;
+window.saveRecords = saveRecords;
 
 // 可选：把 supabase 实例也放到 window，供原脚本直接使用
 //  window.supabase = supabase
@@ -688,6 +690,17 @@ function setLoggedOutUI() {
   syncBtn.style.display = 'none'
 }
 
+/* ====== 上传单条记录到 Supabase ====== */
+async function uploadSingleRecord(userId, difficulty, record) {
+  return await supabase.from('games').insert([{
+    user_id: userId,
+    difficulty: difficulty,
+    duration_ms: record.time,
+    created_at: new Date(record.at).toISOString(),
+    success: true
+  }])
+}
+
 /* ====== 将本地 localStorage 里的记录上报到 Supabase ======
    假设你本地使用的 STORAGE_KEY 与页面相同：'sudoku_records_v1'
    我们要把历史每条作为一行插入到远端的 `games` 表里，
@@ -700,36 +713,64 @@ async function syncLocalRecordsToSupabase(userId) {
   if (!raw) return
   let rec
   try { rec = JSON.parse(raw) } catch(e) { return }
+  
   const rowsToInsert = []
+  let hasUnsynced = false
+  
+  // 只上传未同步的记录
   for (const diff of ['easy','medium','hard','expert']) {
     const obj = rec[diff]
     if (!obj || !obj.history || obj.history.length === 0) continue
-    // 把每条历史上传，字段名与下方 SQL 表描述要对应
+    
     for (const h of obj.history) {
-      rowsToInsert.push({
-        user_id: userId,
-        difficulty: diff,
-        duration_ms: h.time,
-        created_at: new Date(h.at).toISOString(),
-        success: true
-      })
+      // 只处理未同步的记录
+      if (!h.synced) {
+        rowsToInsert.push({
+          user_id: userId,
+          difficulty: diff,
+          duration_ms: h.time,
+          created_at: new Date(h.at).toISOString(),
+          success: true
+        })
+        hasUnsynced = true
+      }
     }
   }
-  if (rowsToInsert.length === 0) return
+  
+  if (rowsToInsert.length === 0) {
+    console.log('没有需要同步的记录')
+    return
+  }
 
-  // 批量插入
+  // 批量插入未同步的记录
   const { error: insertError } = await supabase.from('games').insert(rowsToInsert)
   if (insertError) {
     console.error('上传记录失败', insertError)
     return
   }
 
-  // 可选：更新 best_scores（你也可以在 DB 侧用触发器/函数来维护）
+  // 标记所有记录为已同步
+  for (const diff of ['easy','medium','hard','expert']) {
+    const obj = rec[diff]
+    if (!obj || !obj.history) continue
+    obj.history.forEach(h => {
+      if (!h.synced) {
+        h.synced = true
+      }
+    })
+  }
+  
+  // 保存更新后的同步状态
+  // 调用全局作用域中的 saveRecords 函数
+  window.saveRecords(rec)
+  
+  // 更新 best_scores
   for (const diff of ['easy','medium','hard','expert']) {
     const obj = rec[diff]
     if (!obj || !obj.history || obj.history.length === 0) continue
     const localBest = obj.best
     if (!localBest) continue
+    
     // 读取远端当前 best
     const { data: existing, error: selErr } = await supabase
       .from('best_scores')
@@ -756,8 +797,7 @@ async function syncLocalRecordsToSupabase(userId) {
     }
   }
 
-  // 如果需要：上传成功后清本地或标记为已同步。这里我们不自动清，避免用户误删数据。
-  // localStorage.removeItem(STORAGE_KEY)
+  console.log(`成功同步 ${rowsToInsert.length} 条记录`)
 }
 
 </script>
