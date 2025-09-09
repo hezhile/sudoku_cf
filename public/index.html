@@ -693,7 +693,7 @@ function setLoggedOutUI() {
    我们要把历史每条作为一行插入到远端的 `games` 表里，
    并维护 `best_scores` 表或在插入后判断并更新最佳成绩。
 */
-const STORAGE_KEY = 'sudoku_records_v1'
+// const STORAGE_KEY = 'sudoku_records_v1' // Declared in the global scope above
 
 async function syncLocalRecordsToSupabase(userId) {
   const raw = localStorage.getItem(STORAGE_KEY)
