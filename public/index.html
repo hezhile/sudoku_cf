@@ -101,7 +101,7 @@
     </select>
     <button id="newBtn">生成新题</button>
     <button id="resetBtn">重置</button>
-    <button id="checkBtn">检查答案</button>
+    <!-- <button id="checkBtn">检查答案</button> -->
     <span id="status">用时：<span id="timer">00:00.00</span></span>
     <!-- 放在 #controls 区里 -->
     <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;">
@@ -134,7 +134,7 @@ const boardEl = document.getElementById('board');
 const difficultyEl = document.getElementById('difficulty');
 const newBtn = document.getElementById('newBtn');
 const resetBtn = document.getElementById('resetBtn');
-const checkBtn = document.getElementById('checkBtn');
+// const checkBtn = document.getElementById('checkBtn');
 const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const recordsList = document.getElementById('recordsList');
@@ -569,7 +569,7 @@ function labelOf(d) {
 /* ====== 事件绑定 ====== */
 newBtn.addEventListener('click', ()=>generateNewPuzzle());
 resetBtn.addEventListener('click', ()=>resetPuzzle());
-checkBtn.addEventListener('click', ()=>checkSolution());
+// checkBtn.addEventListener('click', ()=>checkSolution());
 clearRecordsBtn.addEventListener('click', ()=>{ if (confirm('确定清除所有本地记录？')) clearRecords(); });
 
 difficultyEl.addEventListener('change', ()=> {
