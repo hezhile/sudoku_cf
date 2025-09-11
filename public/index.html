@@ -99,8 +99,44 @@
     padding:20px; 
     background:var(--bg-primary); 
     color:var(--text-primary);
+    position: relative;
   }
   h1 { margin-bottom:5px; color:var(--text-primary); }
+  
+  /* 登录区域样式 */
+  #loginArea {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  
+  /* 计时器区域样式 */
+  #timerArea {
+    text-align: center;
+    margin: 15px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+  
+  /* 统一控件高度 */
+  select, button {
+    height: 36px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 记录区域按钮样式 */
+  #recordButtons {
+    display: flex;
+    gap: 8px;
+  }
   #controls { 
     margin:10px 0 20px; 
     display:flex; 
@@ -166,11 +202,12 @@
     background: var(--conflict-bg) !important; 
     color:var(--text-primary);
   }
-  #status { 
+  /* 移除不再使用的status样式 */
+  /* #status { 
     margin-top:12px; 
     min-height:24px; 
     color:var(--text-primary);
-  }
+  } */
   #timer { 
     font-weight:700; 
     margin-left:6px; 
@@ -239,7 +276,17 @@
 </style>
 </head>
 <body>
+  <!-- 登录区域 - 右上角 -->
+  <div id="loginArea">
+    <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;height:36px;box-sizing:border-box;">
+    <button id="loginBtn">发送登录链接</button>
+    <span id="userInfo" class="small" style="margin-left:8px;"></span>
+    <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
+  </div>
+
   <h1>数独游戏</h1>
+  
+  <!-- 控制区域 -->
   <div id="controls">
     难度：
     <select id="difficulty">
@@ -251,13 +298,11 @@
     <button id="newBtn">生成新题</button>
     <button id="resetBtn">重置</button>
     <!-- <button id="checkBtn">检查答案</button> -->
-    <span id="status">用时：<span id="timer">00:00.00</span></span>
-    <!-- 放在 #controls 区里 -->
-    <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;">
-    <button id="loginBtn">发送登录链接</button>
-    <span id="userInfo" class="small" style="margin-left:8px;"></span>
-    <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
-    <button id="syncBtn" style="display:none;padding:6px 8px;">同步本地记录到云端</button>
+  </div>
+  
+  <!-- 计时器区域 - 单独居中 -->
+  <div id="timerArea">
+    用时：<span id="timer">00:00.00</span>
   </div>
 
   <div id="board" aria-label="数独棋盘"></div>
@@ -265,7 +310,10 @@
   <div id="records">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <strong>记录（本地）</strong>
-      <button id="clearRecords" style="padding:4px 8px;">清除记录</button>
+      <div id="recordButtons">
+        <button id="clearRecords" style="padding:4px 8px;">清除记录</button>
+        <button id="syncBtn" style="display:none;padding:4px 8px;">同步本地记录到云端</button>
+      </div>
     </div>
     <div id="recordsList" class="small"></div>
   </div>
