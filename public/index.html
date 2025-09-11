@@ -137,6 +137,54 @@
     display: flex;
     gap: 8px;
   }
+  
+  /* 登出链接样式 */
+  .logout-link {
+    background: none !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0 !important;
+    font-size: 13px;
+    height: auto !important;
+    display: inline !important;
+  }
+  
+  .logout-link:hover {
+    background: none !important;
+    color: var(--caret-color) !important;
+  }
+  
+  /* 暗红色按钮样式 */
+  .danger-button {
+    background: var(--bg-button) !important;
+    color: #d32f2f !important;
+    border: 1px solid var(--border-normal) !important;
+  }
+  
+  .danger-button:hover {
+    background: var(--bg-prefilled) !important;
+    color: #b71c1c !important;
+  }
+  
+  /* 手机端优化 */
+  @media (max-width: 768px) {
+    #loginArea {
+      top: 15px;
+      right: 15px;
+      max-width: 200px;
+    }
+    
+    h1 {
+      margin-top: 40px;
+      margin-bottom: 10px;
+    }
+    
+    .logout-link {
+      font-size: 12px;
+    }
+  }
   #controls { 
     margin:10px 0 20px; 
     display:flex; 
@@ -281,7 +329,7 @@
     <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;height:36px;box-sizing:border-box;">
     <button id="loginBtn">发送登录链接</button>
     <span id="userInfo" class="small" style="margin-left:8px;"></span>
-    <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
+    <button id="logoutBtn" class="logout-link" style="display:none;">登出</button>
   </div>
 
   <h1>数独游戏</h1>
@@ -311,8 +359,8 @@
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <strong>记录（本地）</strong>
       <div id="recordButtons">
-        <button id="clearRecords" style="padding:4px 8px;">清除记录</button>
         <button id="syncBtn" style="display:none;padding:4px 8px;">同步本地记录到云端</button>
+        <button id="clearRecords" class="danger-button" style="padding:4px 8px;">清除记录</button>
       </div>
     </div>
     <div id="recordsList" class="small"></div>
