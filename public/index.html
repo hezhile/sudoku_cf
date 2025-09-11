@@ -55,34 +55,183 @@
     font-size: 1em;
   }
 }
-  body { font-family: Arial, Helvetica, sans-serif; display:flex; flex-direction:column; align-items:center; padding:20px; background:#f6f8fa; }
-  h1 { margin-bottom:5px; }
-  #controls { margin:10px 0 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  select, button { padding:6px 10px; font-size:14px; }
-  #board { display:grid; grid-template-columns: repeat(9, 44px); grid-auto-rows:44px; gap:0; border:3px solid #333; background:#fff; }
-  .cell {
-    width:44px; height:44px; box-sizing:border-box;
-    display:flex; align-items:center; justify-content:center;
-    border:1px solid #999; font-size:18px; position:relative;
+  :root {
+    /* 浅色主题 */
+    --bg-primary: #f6f8fa;
+    --bg-board: #ffffff;
+    --bg-prefilled: #eeeeee;
+    --bg-records: #ffffff;
+    --bg-button: #f0f0f0;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --border-normal: #999999;
+    --border-thick: #333333;
+    --border-records: #dddddd;
+    --border-dashed: #eeeeee;
+    --conflict-bg: #ffdddd;
+    --caret-color: #0066cc;
   }
-  .cell:nth-child(3n) { border-right:3px solid #333; }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* 暗色主题 */
+      --bg-primary: #1a1a1a;
+      --bg-board: #2d2d2d;
+      --bg-prefilled: #3a3a3a;
+      --bg-records: #252525;
+      --bg-button: #404040;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0a0;
+      --border-normal: #555555;
+      --border-thick: #777777;
+      --border-records: #555555;
+      --border-dashed: #444444;
+      --conflict-bg: #8b3a3a;
+      --caret-color: #4a9eff;
+    }
+  }
+
+  body { 
+    font-family: Arial, Helvetica, sans-serif; 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    padding:20px; 
+    background:var(--bg-primary); 
+    color:var(--text-primary);
+  }
+  h1 { margin-bottom:5px; color:var(--text-primary); }
+  #controls { 
+    margin:10px 0 20px; 
+    display:flex; 
+    gap:10px; 
+    align-items:center; 
+    flex-wrap:wrap; 
+    color:var(--text-primary);
+  }
+  select, button { 
+    padding:6px 10px; 
+    font-size:14px; 
+    background:var(--bg-button);
+    color:var(--text-primary);
+    border:1px solid var(--border-normal);
+    border-radius:4px;
+  }
+  select:hover, button:hover {
+    background:var(--bg-prefilled);
+  }
+  #board { 
+    display:grid; 
+    grid-template-columns: repeat(9, 44px); 
+    grid-auto-rows:44px; 
+    gap:0; 
+    border:3px solid var(--border-thick); 
+    background:var(--bg-board); 
+  }
+  .cell {
+    width:44px; 
+    height:44px; 
+    box-sizing:border-box;
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    border:1px solid var(--border-normal); 
+    font-size:18px; 
+    position:relative;
+    color:var(--text-primary);
+  }
+  .cell:nth-child(3n) { border-right:3px solid var(--border-thick); }
   /* .cell:nth-child(n+19):nth-child(-n+27), .cell:nth-child(n+46):nth-child(-n+54) { */
     /* just to avoid CSS complexity for horizontal thicker lines we set via :nth-child below */
   /* }
   /* 3x3 block thicker horizontal borders */
-  .row-break { border-bottom:3px solid #333; }
-  .prefilled { background:#eee; font-weight:700; }
-  input.cell-input {
-    width:100%; height:100%; border:0; outline:0; text-align:center; font-size:18px;
-    background:transparent; caret-color:blue;
+  .row-break { border-bottom:3px solid var(--border-thick); }
+  .prefilled { 
+    background:var(--bg-prefilled); 
+    font-weight:700; 
+    color:var(--text-primary);
   }
-  .conflict { background: #ffdddd !important; }
-  #status { margin-top:12px; min-height:24px; }
-  #timer { font-weight:700; margin-left:6px; }
-  #records { margin-top:14px; width:100%; max-width:540px; padding:10px; background:#fff; border:1px solid #ddd; border-radius:6px;}
-  .record-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #eee; }
+  input.cell-input {
+    width:100%; 
+    height:100%; 
+    border:0; 
+    outline:0; 
+    text-align:center; 
+    font-size:18px;
+    background:transparent; 
+    caret-color:var(--caret-color);
+    color:var(--text-primary);
+  }
+  .conflict { 
+    background: var(--conflict-bg) !important; 
+    color:var(--text-primary);
+  }
+  #status { 
+    margin-top:12px; 
+    min-height:24px; 
+    color:var(--text-primary);
+  }
+  #timer { 
+    font-weight:700; 
+    margin-left:6px; 
+    color:var(--text-primary);
+  }
+  #records { 
+    margin-top:14px; 
+    width:100%; 
+    max-width:540px; 
+    padding:10px; 
+    background:var(--bg-records); 
+    border:1px solid var(--border-records); 
+    border-radius:6px;
+    color:var(--text-primary);
+  }
+  .record-row { 
+    display:flex; 
+    justify-content:space-between; 
+    padding:6px 0; 
+    border-bottom:1px dashed var(--border-dashed); 
+    color:var(--text-primary);
+  }
   .record-row:last-child { border-bottom:0; }
-  .small { font-size:13px; color:#666; }
+  .small { 
+    font-size:13px; 
+    color:var(--text-secondary); 
+  }
+  .changelog-details {
+    margin: 1em auto;
+    padding: 0.8em;
+    border: 1px solid var(--border-records);
+    border-radius: 8px;
+    background: var(--bg-records);
+    max-width: 550px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    font-size: 1em;
+    color:var(--text-primary);
+  }
+
+  .changelog-details summary {
+    font-weight: 600;
+    font-size: 1.15em;
+    cursor: pointer;
+    outline: none;
+    padding: 0.2em 0;
+    list-style: none;
+    color:var(--text-primary);
+  }
+
+  .changelog-details ul {
+    margin: 0.8em 0 0 1em;
+    padding: 0;
+    color:var(--text-primary);
+  }
+
+  .changelog-details li {
+    line-height: 1.7;
+    margin-bottom: 0.5em;
+    word-break: break-word;
+    color:var(--text-primary);
+  }
   @media (max-width:520px) {
     #board { grid-template-columns: repeat(9, 36px); grid-auto-rows:36px; }
     .cell { width:36px; height:36px; font-size:16px; }
@@ -104,7 +253,7 @@
     <!-- <button id="checkBtn">检查答案</button> -->
     <span id="status">用时：<span id="timer">00:00.00</span></span>
     <!-- 放在 #controls 区里 -->
-    <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;">
+    <input id="emailInput" type="email" placeholder="输入邮箱并发送登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;">
     <button id="loginBtn">发送登录链接</button>
     <span id="userInfo" class="small" style="margin-left:8px;"></span>
     <button id="logoutBtn" style="display:none;padding:6px 8px;">登出</button>
@@ -269,9 +418,9 @@ function renderBoard(board, given) {
       const cell = document.createElement('div');
       cell.className = 'cell';
       // 添加 thicker bottom border after rows 3 and 6
-      if (r===2 || r===5) cell.style.borderBottom = '3px solid #333';
+      if (r===2 || r===5) cell.style.borderBottom = '3px solid var(--border-thick)';
       // 添加 thicker right border after columns 3 and 6
-      if (c===2 || c===5) cell.style.borderRight = '3px solid #333';
+      if (c===2 || c===5) cell.style.borderRight = '3px solid var(--border-thick)';
 
       if (given[r][c]) {
         cell.classList.add('prefilled');
