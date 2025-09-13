@@ -56,7 +56,7 @@
     font-size: 0.98em;
   }
   .changelog-details summary {
-    font-size: 1em;
+    font-size: 0.85em;
   }
 }
   :root {
@@ -105,7 +105,15 @@
     color:var(--text-primary);
     position: relative;
   }
-  h1 { margin-bottom:5px; color:var(--text-primary); }
+  h1 { 
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 24px;
+    margin: 0;
+    text-align: left;
+    color:var(--text-primary);
+  }
   
   /* 登录区域样式 */
   #loginArea {
@@ -301,12 +309,26 @@
 
   .changelog-details summary {
     font-weight: 600;
-    font-size: 1.15em;
+    font-size: 0.9em;
     cursor: pointer;
     outline: none;
     padding: 0.2em 0;
     list-style: none;
     color:var(--text-primary);
+    text-align: left;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .changelog-details summary::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+  }
+
+  .changelog-details[open] summary::before {
+    content: "▼";
   }
 
   .changelog-details ul {
@@ -340,10 +362,9 @@
   
   <!-- 控制区域 -->
   <div id="controls">
-    难度：
-    <select id="difficulty">
+      <select id="difficulty">
       <option value="easy">简单</option>
-      <option value="medium" selected>中等</option>
+      <option value="medium" selected>中等难度</option>
       <option value="hard">困难</option>
       <option value="expert">专家</option>
     </select>
