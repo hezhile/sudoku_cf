@@ -944,13 +944,13 @@ function setLoggedInUI(user) {
   userInfo.textContent = user.email || user.id
   loginBtn.style.display = 'none'
   emailInput.style.display = 'none'
-  logoutBtn.style.display = ''
-  syncBtn.style.display = ''
+  logoutBtn.style.display = 'inline-block'
+  syncBtn.style.display = 'inline-block'
 }
 function setLoggedOutUI() {
   userInfo.textContent = ''
-  loginBtn.style.display = ''
-  emailInput.style.display = ''
+  loginBtn.style.display = 'inline-block'
+  emailInput.style.display = 'inline-block'
   logoutBtn.style.display = 'none'
   syncBtn.style.display = 'none'
 }
