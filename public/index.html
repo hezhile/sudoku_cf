@@ -106,25 +106,22 @@
     position: relative;
   }
   h1 { 
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: relative;
     font-size: 24px;
-    margin: 0;
+    margin: 10px 0;
     text-align: left;
     color:var(--text-primary);
   }
   
   /* 登录区域样式 */
   #loginArea {
-    position: absolute;
-    top: 20px;
-    right: 20px;
+    position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    margin: 10px 0;
   }
   
   /* 计时器区域样式 */
@@ -137,7 +134,7 @@
   
   /* 统一控件高度 */
   select, button {
-    height: 36px;
+    height: 34px;
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
@@ -183,14 +180,11 @@
   /* 手机端优化 */
   @media (max-width: 768px) {
     #loginArea {
-      top: 15px;
-      right: 15px;
       max-width: 200px;
     }
     
     h1 {
-      margin-top: 40px;
-      margin-bottom: 10px;
+      margin: 8px 0;
     }
     
     .logout-link {
@@ -198,7 +192,7 @@
     }
   }
   #controls { 
-    margin:10px 0 20px; 
+    margin:10px 0; 
     display:flex; 
     gap:10px; 
     align-items:center; 
