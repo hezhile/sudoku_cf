@@ -105,23 +105,32 @@
     color:var(--text-primary);
     position: relative;
   }
-  h1 { 
-    position: relative;
-    font-size: 24px;
-    margin: 10px 0;
-    text-align: left !important;
-    color:var(--text-primary);
+
+  .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 1200px; /* Adjust to match your content width, e.g., same as #records */
+  margin: 10px 0;
+  }
+
+  h1 {
+  font-size: 24px;
+  margin: 0;
+  color: var(--text-primary);
   }
   
   /* 登录区域样式 */
   #loginArea {
-    position: relative;
+    /* position: relative; */
     display: flex;
-    align-items: right;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    margin: 10px 0;
+    flex-wrap: nowrap;
+    /* justify-content: flex-end;
+    margin: 10px 0; */
   }
   
   /* 计时器区域样式 */
@@ -179,18 +188,30 @@
   
   /* 手机端优化 */
   @media (max-width: 768px) {
+    .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    }
+
     #loginArea {
+      margin-top: 10px;
+      align-self: flex-end; 
       max-width: 200px;
     }
     
     h1 {
-      margin: 8px 0;
+      margin: 0 0 8px 0;
     }
     
     .logout-link {
       font-size: 14px;
     }
-  }
+    /* Ensure loginArea elements remain consistent */
+    #loginArea input,
+    #loginArea button {
+      height: 32px;
+      box-sizing: border-box;
+    }
   #controls { 
     margin:10px 0; 
     display:flex; 
@@ -344,13 +365,14 @@
 </style>
 </head>
 <body>
-  <h1>数独游戏</h1>
-  <!-- 登录区域 - 右上角 -->
-  <div id="loginArea">
-    <input id="emailInput" type="email" placeholder="请输入邮箱以接收登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;height:36px;box-sizing:border-box;">
-    <button id="loginBtn">提交</button>
-    <span id="userInfo" class="small" style="margin-left:12px;"></span>
-    <button id="logoutBtn" class="logout-link" style="display:none;">登出</button>
+  <div class="header-container">
+    <h1>数独游戏</h1>
+    <div id="loginArea">
+      <input id="emailInput" type="email" placeholder="请输入邮箱以接收登录链接" style="padding:6px 8px;background:var(--bg-button);color:var(--text-primary);border:1px solid var(--border-normal);border-radius:4px;height:36px;box-sizing:border-box;">
+      <button id="loginBtn">提交</button>
+      <span id="userInfo" class="small" style="margin-left:12px;"></span>
+      <button id="logoutBtn" class="logout-link" style="display:none;">登出</button>
+    </div>
   </div>
 
   
