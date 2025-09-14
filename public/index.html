@@ -259,7 +259,7 @@
     position:relative;
     color:var(--text-primary);
   }
-  .cell:nth-child(3n) { border-right:3px solid var(--border-thick); }
+  .cell:nth-child(3n):not(:nth-child(9n)) { border-right:3px solid var(--border-thick); }
   /* .cell:nth-child(n+19):nth-child(-n+27), .cell:nth-child(n+46):nth-child(-n+54) { */
     /* just to avoid CSS complexity for horizontal thicker lines we set via :nth-child below */
   /* }
