@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>数独 Sudoku - 浮起阴影效果测试</title>
+<style>
+  :root {
+    /* 浅色主题 */
+    --bg-primary: #f6f8fa;
+    --bg-board: #ffffff;
+    --bg-prefilled: #eeeeee;
+    --bg-records: #ffffff;
+    --bg-button: #f0f0f0;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --border-normal: #999999;
+    --border-thick: #333333;
+    --border-records: #dddddd;
+    --border-dashed: #eeeeee;
+    --conflict-bg: #ffdddd;
+    --caret-color: #0066cc;
+    --shadow-color: rgba(0, 0, 0, 0.15);
+    --elevation-height: 4px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* 暗色主题 */
+      --bg-primary: #1a1a1a;
+      --bg-board: #2d2d2d;
+      --bg-prefilled: #3a3a3a;
+      --bg-records: #252525;
+      --bg-button: #404040;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0a0;
+      --border-normal: #555555;
+      --border-thick: #777777;
+      --border-records: #555555;
+      --border-dashed: #444444;
+      --conflict-bg: #8b3a3a;
+      --caret-color: #4a9eff;
+      --shadow-color: rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  body { 
+    font-family: Arial, Helvetica, sans-serif; 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    padding:0.5rem; 
+    background:var(--bg-primary); 
+    color:var(--text-primary);
+    position: relative;
+  }
+
+  h1 {
+    font-size: 30px;
+    margin: 20px 0;
+    color: var(--text-primary);
+  }
+  
+  #board { 
+    display:grid; 
+    grid-template-columns: repeat(9, 44px); 
+    grid-auto-rows:44px; 
+    gap:0; 
+    border:3px solid var(--border-thick); 
+    background:var(--bg-board); 
+    padding: 8px; /* 为阴影效果提供空间 */
+  }
+  
+  .cell {
+    width:44px; 
+    height:44px; 
+    box-sizing:border-box;
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    border:1px solid var(--border-normal); 
+    font-size:18px; 
+    position:relative;
+    color:var(--text-primary);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 1;
+  }
+  
+  /* 宫格边界单元格浮起效果 */
+  .cell:nth-child(3n) { /* 每个宫格的右边界 */
+    transform: translateZ(var(--elevation-height));
+    box-shadow: -1px 0 3px var(--shadow-color);
+    margin-right: 2px; /* 增加一点额外间距 */
+  }
+  
+  .cell:nth-child(n+19):nth-child(-n+27), /* 第一个3x3宫格底部 */
+  .cell:nth-child(n+46):nth-child(-n+54) { /* 第二个3x3宫格底部 */
+    transform: translateZ(var(--elevation-height));
+    box-shadow: 0 -1px 3px var(--shadow-color);
+    margin-bottom: 2px; /* 增加一点额外间距 */
+  }
+  
+  /* 右下角单元格（既是右边界又是底边界）的特殊处理 */
+  .cell:nth-child(9n):nth-child(n+19):nth-child(-n+27),
+  .cell:nth-child(9n):nth-child(n+46):nth-child(-n+54) {
+    box-shadow: -1px -1px 3px var(--shadow-color);
+  }
+  
+  .prefilled { 
+    background:var(--bg-prefilled); 
+    font-weight:700; 
+    color:var(--text-primary);
+  }
+  
+  input.cell-input {
+    width:100%; 
+    height:100%; 
+    border:0; 
+    outline:0; 
+    text-align:center; 
+    font-size:18px;
+    background:transparent; 
+    caret-color:var(--caret-color);
+    color:var(--text-primary);
+  }
+  
+  .conflict { 
+    background: var(--conflict-bg) !important; 
+    color:var(--text-primary);
+  }
+  
+  /* 响应式调整 */
+  @media (max-width:520px) {
+    #board { 
+      grid-template-columns: repeat(9, 36px); 
+      grid-auto-rows:36px;
+      padding: 6px;
+    }
+    .cell { 
+      width:36px; 
+      height:36px; 
+      font-size:16px; 
+    }
+    :root {
+      --elevation-height: 3px;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>数独 Sudoku - 浮起阴影效果测试</h1>
+  <div id="board" aria-label="数独棋盘"></div>
+  
+  <script>
+    // 简单的测试数据
+    const testPuzzle = [
+      [5,3,0,0,7,0,0,0,0],
+      [6,0,0,1,9,5,0,0,0],
+      [0,9,8,0,0,0,0,6,0],
+      [8,0,0,0,6,0,0,0,3],
+      [4,0,0,8,0,3,0,0,1],
+      [7,0,0,0,2,0,0,0,6],
+      [0,6,0,0,0,0,2,8,0],
+      [0,0,0,4,1,9,0,0,5],
+      [0,0,0,0,8,0,0,7,9]
+    ];
+    
+    const boardEl = document.getElementById('board');
+    
+    // 渲染测试棋盘
+    function renderTestBoard() {
+      boardEl.innerHTML = '';
+      for (let r=0;r<9;r++){
+        for (let c=0;c<9;c++){
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          
+          if (testPuzzle[r][c] !== 0) {
+            cell.classList.add('prefilled');
+            cell.textContent = testPuzzle[r][c];
+          } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'numeric';
+            input.maxLength = 1;
+            input.className = 'cell-input';
+            input.dataset.r = r;
+            input.dataset.c = c;
+            input.addEventListener('input', function(e) {
+              // 只保留 1-9
+              const raw = e.target.value.replace(/[^\d]/g,'');
+              let v = raw.slice(0,1);
+              if (v === '0') v = '';
+              e.target.value = v;
+            });
+            cell.appendChild(input);
+          }
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+    
+    // 初始化
+    renderTestBoard();
+  </script>
+</body>
+</html>
