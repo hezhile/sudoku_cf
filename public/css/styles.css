@@ -1,0 +1,405 @@
+:root {
+  /* 尺寸变量 */
+  --cell-size: 44px;
+  --cell-size-mobile: 36px;
+  --board-width: calc(var(--cell-size) * 9 + 6px); /* 9格 + 边框微调 */
+  --content-max-width: 500px; /* 统一容器宽度 */
+
+  /* 浅色主题 */
+  --bg-primary: #f6f8fa;
+  --bg-board: #ffffff;
+  --bg-prefilled: #eef2f5; /*稍微偏蓝灰一点更现代*/
+  --bg-records: #ffffff;
+  --bg-button: #ffffff;
+  --bg-input: #ffffff;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --border-normal: #d0d7de;
+  --border-thick: #24292f;
+  --border-focus: #0969da;
+  --conflict-bg: #ffebe9;
+  --conflict-text: #cf222e;
+  --caret-color: #0969da;
+  --btn-hover: #f3f4f6;
+  --shadow-card: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 暗色主题 */
+    --bg-primary: #0d1117;
+    --bg-board: #161b22;
+    --bg-prefilled: #21262d;
+    --bg-records: #161b22;
+    --bg-button: #21262d;
+    --bg-input: #0d1117;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --border-normal: #30363d;
+    --border-thick: #8b949e;
+    --border-focus: #58a6ff;
+    --conflict-bg: #490202;
+    --conflict-text: #ff7b72;
+    --caret-color: #58a6ff;
+    --btn-hover: #30363d;
+    --shadow-card: none;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* 主容器：统一所有内容的宽度 */
+.main-container {
+  width: 100%;
+  max-width: var(--content-max-width);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 头部 */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 26px;
+  margin: 0;
+  font-weight: 700;
+}
+
+/* 登录区域 */
+.login-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 通用控件样式 (Input, Select, Button) */
+.form-control, .btn {
+  height: 36px; /* 统一高度 */
+  padding: 0 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-normal);
+  border-radius: 6px;
+  background: var(--bg-button);
+  color: var(--text-primary);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-control {
+  background: var(--bg-input);
+  width: 200px; /* 默认宽度 */
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+}
+
+.btn {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background-color: var(--btn-hover);
+  border-color: var(--text-secondary);
+}
+
+.btn-primary {
+  background-color: var(--bg-prefilled);
+}
+
+.btn-danger {
+  color: #cf222e;
+  border-color: var(--border-normal);
+}
+.btn-danger:hover {
+  background: #fff0f0;
+  border-color: #cf222e;
+}
+
+.btn-sm {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.logout-link {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 5px;
+}
+.logout-link:hover { color: var(--caret-color); }
+
+/* 游戏控制栏 */
+.controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.controls-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 计时器 */
+.timer-display {
+  font-family: "SF Mono", "Monaco", monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  width: 100%;
+  padding: 10px 0;
+}
+
+/* 棋盘区域 */
+.board-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 5px 0 20px 0;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(9, var(--cell-size));
+  grid-auto-rows: var(--cell-size);
+  border: 2px solid var(--border-thick);
+  background: var(--bg-board);
+  box-shadow: var(--shadow-card);
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-normal);
+  font-size: 20px;
+  position: relative;
+  color: var(--text-primary);
+}
+
+/* 加粗边框逻辑 */
+.cell:nth-child(3n):not(:nth-child(9n)) { border-right: 2px solid var(--border-thick); }
+/* 行加粗由JS控制或 nth-child 控制，这里为了简单保留JS逻辑或用CSS */
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid var(--border-thick);
+}
+/* 为了修正JS里的 border-bottom 覆盖问题，CSS选择器优先级要处理好，或者保持JS添加样式 */
+
+.prefilled {
+  background: var(--bg-prefilled);
+  font-weight: 600;
+}
+
+input.cell-input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  text-align: center;
+  font-size: 20px;
+  background: transparent;
+  caret-color: var(--caret-color);
+  color: var(--text-primary);
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  font-family: inherit;
+  font-weight: normal;
+}
+
+.conflict {
+  background: var(--conflict-bg) !important;
+  color: var(--conflict-text) !important;
+}
+.conflict input { color: var(--conflict-text) !important; }
+
+/* 记录区域 */
+#records, .changelog-details {
+  width: 100%;
+  max-width: 100%; /* 撑满 main-container */
+  padding: 16px;
+  background: var(--bg-records);
+  border: 1px solid var(--border-normal);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-normal);
+}
+
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-normal);
+}
+.record-row:last-child { border-bottom: 0; }
+
+.changelog-details summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .header-section { flex-direction: column; align-items: flex-start; }
+  .login-area { width: 100%; justify-content: space-between; }
+  .login-area .form-control { flex-grow: 1; width: auto; }
+
+  .controls-bar { flex-wrap: wrap; }
+  .controls-group { flex-grow: 1; }
+  #difficulty { flex-grow: 1; }
+
+  #board {
+    grid-template-columns: repeat(9, var(--cell-size-mobile));
+    grid-auto-rows: var(--cell-size-mobile);
+  }
+  .cell { width: var(--cell-size-mobile); height: var(--cell-size-mobile); font-size: 18px; }
+  input.cell-input { font-size: 18px; }
+}
+
+/* Toast 通知系统样式 */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 250px;
+  max-width: 400px;
+  padding: 12px 16px;
+  background: var(--bg-board);
+  border: 1px solid var(--border-normal);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+.toast-success {
+  border-left: 4px solid #22c55e;
+}
+.toast-error {
+  border-left: 4px solid #ef4444;
+}
+.toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+.toast-info {
+  border-left: 4px solid #3b82f6;
+}
+
+.toast-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.toast-message {
+  flex-grow: 1;
+  color: var(--text-primary);
+}
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.5;
+  color: var(--text-secondary);
+  padding: 0;
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.toast-close:hover {
+  opacity: 1;
+}
+
+/* 响应式 Toast */
+@media (max-width: 600px) {
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  .toast {
+    min-width: auto;
+    width: 100%;
+  }
+}
