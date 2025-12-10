@@ -127,6 +127,25 @@ class I18n {
         element.setAttribute('aria-label', translation);
       }
     });
+
+    // 特别处理难度选择器的选项
+    this.updateDifficultySelector();
+  }
+
+  updateDifficultySelector() {
+    const difficultySelect = document.getElementById('difficulty');
+    if (difficultySelect) {
+      const options = difficultySelect.querySelectorAll('option');
+      options.forEach(option => {
+        const key = option.getAttribute('data-i18n');
+        if (key) {
+          const translation = this.t(key);
+          if (translation && translation !== key) {
+            option.textContent = translation;
+          }
+        }
+      });
+    }
   }
 
   getCurrentLanguage() {
@@ -144,3 +163,13 @@ class I18n {
 
 // 创建全局实例
 window.i18n = new I18n();
+
+// 自动初始化并更新DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.i18n.updateDOM();
+  });
+} else {
+  // 如果DOM已经加载完成，立即更新
+  window.i18n.updateDOM();
+}

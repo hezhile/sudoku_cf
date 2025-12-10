@@ -93,8 +93,13 @@
 
   </div>
 
-<script type="module" src="/js/i18n/i18n.js"></script>
-<script type="module" src="/js/main.js"></script>
+<script type="module">
+    // 首先加载i18n系统
+    import('/js/i18n/i18n.js').then(() => {
+      // i18n加载完成后，再加载主应用
+      import('/js/main.js');
+    });
+  </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cd4fe89cf3184860bde3a69a7f2facef"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

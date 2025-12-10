@@ -196,7 +196,7 @@ async function initializeI18n() {
     await globalI18n.loadTranslations(globalI18n.currentLang);
     console.log('Loaded translations:', Object.keys(globalI18n.translations));
 
-    // 更新DOM中的翻译
+    // 更新DOM中的翻译（包括难度选择器）
     globalI18n.updateDOM();
 
     // 设置语言选择器的当前值
