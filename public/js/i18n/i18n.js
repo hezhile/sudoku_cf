@@ -2,13 +2,14 @@ class I18n {
   constructor() {
     // 安全地获取语言设置，支持隐私模式
     try {
-      this.currentLang = localStorage.getItem('language') || 'zh-CN';
+      // Try to get saved language, default to English instead of Chinese
+      this.currentLang = localStorage.getItem('language') || 'en-US';
     } catch (error) {
       console.warn('localStorage is not available, using default language:', error);
-      this.currentLang = 'zh-CN';
+      this.currentLang = 'en-US';
     }
     this.translations = {};
-    this.fallbackLang = 'zh-CN';
+    this.fallbackLang = 'en-US';
     this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
   }
 
