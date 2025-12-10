@@ -8,6 +8,9 @@ import { emit } from '../utils/event-bus.js';
 import { safeJSONParse, safeJSONStringify } from '../utils/helpers.js';
 import { showWarning, showError } from '../ui/toast.js';
 
+// 获取全局i18n实例
+const getI18n = () => window.i18n;
+
 /**
  * 加载记录
  * @returns {Object} 记录对象
@@ -45,10 +48,10 @@ export function saveRecords(records) {
 
     if (error.name === 'QuotaExceededError') {
       emit('storage:quota-exceeded', { error });
-      showWarning('存储空间不足，请清理旧记录');
+      showWarning(getI18n().t('errors.storageFull'));
     } else {
       emit('storage:error', { error, operation: 'save' });
-      showError('保存失败，请检查浏览器设置');
+      showError(getI18n().t('errors.saveFailed'));
     }
   }
 }
@@ -301,7 +304,7 @@ export function importRecords(jsonString) {
   try {
     const records = safeJSONParse(jsonString, null);
     if (!records) {
-      showError('无效的备份数据');
+      showError(getI18n().t('errors.invalidData'));
       return false;
     }
 
@@ -310,7 +313,7 @@ export function importRecords(jsonString) {
     return true;
   } catch (error) {
     console.error('导入记录失败:', error);
-    showError('导入失败：' + error.message);
+    showError(getI18n().t('errors.importFailed') + error.message);
     return false;
   }
 }

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I18n Test</title>
+</head>
+<body>
+    <h1>I18n Test Page</h1>
+
+    <div class="language-selector" style="position: absolute; top: 10px; right: 10px;">
+        <select id="language-selector" class="form-control" style="min-width: 100px;">
+            <option value="zh-CN">中文</option>
+            <option value="en-US">English</option>
+            <option value="ja-JP">日本語</option>
+        </select>
+    </div>
+
+    <h2 data-i18n="gameTitle">数独 Sudoku</h2>
+    <button data-i18n="newGame">新游戏</button>
+    <button data-i18n="login">登录</button>
+    <button data-i18n="logout">登出</button>
+
+    <p id="test-message"></p>
+
+    <script type="module">
+        import './js/i18n/i18n.js';
+
+        // 等待i18n加载完成
+        await i18n.loadTranslations(i18n.currentLang);
+        i18n.updateDOM();
+
+        // 测试动态消息
+        const testMsg = document.getElementById('test-message');
+        testMsg.textContent = i18n.t('welcome', { email: 'test@example.com' });
+
+        // 语言切换测试
+        const selector = document.getElementById('language-selector');
+        selector.value = i18n.currentLang;
+
+        selector.addEventListener('change', async (e) => {
+            const newLang = e.target.value;
+            console.log('Switching to:', newLang);
+            await i18n.setLanguage(newLang);
+            // 重新设置动态消息
+            testMsg.textContent = i18n.t('welcome', { email: 'test@example.com' });
+        });
+
+        console.log('Current language:', i18n.currentLang);
+        console.log('Available translations:', Object.keys(i18n.translations));
+    </script>
+</body>
+</html>

@@ -8,6 +8,9 @@ import { loadRecords, saveRecords, getUnsyncedRecords, markAllAsSynced } from '.
 import { emit } from '../utils/event-bus.js';
 import { showSuccess, showError, showWarning } from '../ui/toast.js';
 
+// 获取全局i18n实例
+const getI18n = () => window.i18n;
+
 /**
  * 上传单条记录到 Supabase
  * @param {string} userId - 用户 ID
@@ -98,11 +101,11 @@ export async function syncLocalRecordsToSupabase(userId) {
     // 更新 best_scores
     await updateBestScores(userId, records);
 
-    showSuccess(i18n.t('buttons.synced', { count: rowsToInsert.length }));
+    showSuccess(getI18n().t('buttons.synced', { count: rowsToInsert.length }));
     emit('sync:completed', { count: rowsToInsert.length });
   } catch (error) {
     console.error('同步失败:', error);
-    showWarning(i18n.t('errors.syncFailed'));
+    showWarning(getI18n().t('errors.syncFailed'));
     emit('sync:failed', { error });
   }
 }

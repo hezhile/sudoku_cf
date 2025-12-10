@@ -5,6 +5,9 @@
 
 import { emit } from '../utils/event-bus.js';
 
+// 获取全局i18n实例
+const getI18n = () => window.i18n;
+
 /**
  * 控件元素引用
  */
@@ -56,7 +59,9 @@ function handleNewGame() {
  * 处理重置按钮点击
  */
 function handleReset() {
-  if (confirm(i18n.t('confirmReset'))) {
+  console.log('Reset button clicked');
+  if (confirm(getI18n().t('confirmReset'))) {
+    console.log('Reset confirmed, emitting game:reset event');
     emit('game:reset');
   }
 }
@@ -65,7 +70,7 @@ function handleReset() {
  * 处理清除记录按钮点击
  */
 function handleClearRecords() {
-  if (confirm(i18n.t('confirmClear'))) {
+  if (confirm(getI18n().t('confirmClear'))) {
     emit('records:clear');
   }
 }
@@ -140,12 +145,12 @@ export function setLoading(loading) {
   if (loading) {
     disableControls();
     if (newBtn) {
-      newBtn.textContent = i18n.t('buttons.generating');
+      newBtn.textContent = getI18n().t('buttons.generating');
     }
   } else {
     enableControls();
     if (newBtn) {
-      newBtn.textContent = i18n.t('newGame');
+      newBtn.textContent = getI18n().t('newGame');
     }
   }
 }

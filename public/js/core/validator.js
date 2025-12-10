@@ -5,6 +5,9 @@
 
 import { GRID_SIZE, BLOCK_SIZE } from '../config/constants.js';
 
+// 获取全局i18n实例
+const getI18n = () => window.i18n;
+
 /**
  * 检测棋盘中的冲突单元格
  * @param {number[][]} board - 要检测的棋盘
@@ -103,7 +106,7 @@ export function validateSolution(userBoard, solutionBoard) {
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
       if (userBoard[r][c] === 0) {
-        errors.push(i18n.t('errors.emptyCells'));
+        errors.push(getI18n().t('errors.emptyCells'));
         return { isCorrect: false, errors };
       }
     }
@@ -112,7 +115,7 @@ export function validateSolution(userBoard, solutionBoard) {
   // 检查冲突
   const { hasConflicts, conflicts } = detectConflicts(userBoard);
   if (hasConflicts) {
-    errors.push(i18n.t('errors.conflicts', { count: conflicts.size }));
+    errors.push(getI18n().t('errors.conflicts', { count: conflicts.size }));
     return { isCorrect: false, errors };
   }
 
@@ -121,7 +124,7 @@ export function validateSolution(userBoard, solutionBoard) {
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
         if (userBoard[r][c] !== solutionBoard[r][c]) {
-          errors.push(i18n.t('errors.incorrectAnswer'));
+          errors.push(getI18n().t('errors.incorrectAnswer'));
           return { isCorrect: false, errors };
         }
       }

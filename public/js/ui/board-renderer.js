@@ -20,6 +20,12 @@ let boardElement = null;
 let givenMask = null;
 
 /**
+ * 是否正在重置棋盘（防止在重置时触发自动完成）
+ * @type {boolean}
+ */
+let isResetting = false;
+
+/**
  * 初始化棋盘渲染器
  * @param {string} boardSelector - 棋盘容器的选择器
  */
@@ -41,6 +47,9 @@ export function renderBoard(board, given) {
   if (!boardElement) {
     initBoardRenderer();
   }
+
+  // 设置重置标志，防止自动完成检测
+  isResetting = true;
 
   givenMask = given;
   boardElement.innerHTML = '';
@@ -87,6 +96,11 @@ export function renderBoard(board, given) {
   }
 
   updateConflicts();
+
+  // 重置完成后清除标志
+  setTimeout(() => {
+    isResetting = false;
+  }, 100);
 }
 
 /**
@@ -237,6 +251,9 @@ export function readUserBoard() {
  * 检查是否自动完成
  */
 function checkAutoComplete() {
+  // 如果正在重置，不进行检查
+  if (isResetting) return;
+
   const board = readUserBoard();
 
   // 检查是否全部填满

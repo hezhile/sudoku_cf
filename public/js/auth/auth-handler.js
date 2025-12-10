@@ -7,6 +7,9 @@ import { SUPABASE_CONFIG } from '../config/constants.js';
 import { emit } from '../utils/event-bus.js';
 import { showSuccess, showError, showWarning } from '../ui/toast.js';
 
+// 获取全局i18n实例
+const getI18n = () => window.i18n;
+
 /**
  * Supabase 客户端实例
  * @type {Object|null}
@@ -84,7 +87,7 @@ export async function initAuth() {
     });
   } catch (error) {
     console.error('认证模块初始化失败:', error);
-    showError(i18n.t('errors.authFailed'));
+    showError(getI18n().t('errors.authFailed'));
     emit('auth:error', { error });
   }
 }
@@ -97,20 +100,20 @@ async function handleLogin() {
 
   const email = emailInput.value.trim();
   if (!email) {
-    showWarning(i18n.t('errors.emptyEmail'));
+    showWarning(getI18n().t('errors.emptyEmail'));
     return;
   }
 
   // 简单的邮箱格式验证
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    showWarning(i18n.t('errors.invalidEmail'));
+    showWarning(getI18n().t('errors.invalidEmail'));
     return;
   }
 
   try {
     loginBtn.disabled = true;
-    loginBtn.textContent = i18n.t('buttons.sending');
+    loginBtn.textContent = getI18n().t('buttons.sending');
 
     const redirectTo = window.location.href;
     const { data, error } = await supabase.auth.signInWithOtp({
@@ -122,17 +125,17 @@ async function handleLogin() {
       throw error;
     }
 
-    showSuccess(i18n.t('buttons.sent'));
+    showSuccess(getI18n().t('buttons.sent'));
     emailInput.value = '';
     emit('auth:magic-link-sent', { email });
   } catch (error) {
     console.error('发送登录邮件失败:', error);
-    showError(i18n.t('errors.sendFailed') + (error.message || i18n.t('errors.unknown')));
+    showError(getI18n().t('errors.sendFailed') + (error.message || getI18n().t('errors.unknown')));
     emit('auth:error', { error, operation: 'login' });
   } finally {
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = i18n.t('login');
+      loginBtn.textContent = getI18n().t('login');
     }
   }
 }
@@ -147,10 +150,10 @@ async function handleLogout() {
     }
 
     await supabase.auth.signOut();
-    showSuccess(i18n.t('status.loggedOut'));
+    showSuccess(getI18n().t('status.loggedOut'));
   } catch (error) {
     console.error('登出失败:', error);
-    showError(i18n.t('errors.logoutFailed'));
+    showError(getI18n().t('errors.logoutFailed'));
     emit('auth:error', { error, operation: 'logout' });
   } finally {
     if (logoutBtn) {
@@ -164,7 +167,7 @@ async function handleLogout() {
  */
 async function handleManualSync() {
   if (!currentSession) {
-    showWarning(i18n.t('status.notLoggedIn'));
+    showWarning(getI18n().t('status.notLoggedIn'));
     return;
   }
 
@@ -172,7 +175,7 @@ async function handleManualSync() {
     emit('sync:manual-trigger', { userId: currentSession.user.id });
   } catch (error) {
     console.error('手动同步失败:', error);
-    showError(i18n.t('errors.syncFailed'));
+    showError(getI18n().t('errors.syncFailed'));
   }
 }
 

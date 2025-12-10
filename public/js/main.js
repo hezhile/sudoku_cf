@@ -28,6 +28,9 @@ import { formatTime } from './utils/helpers.js';
 // 配置
 import { DIFFICULTY_HOLES, DIFFICULTY_LABELS } from './config/constants.js';
 
+// 获取全局i18n实例（将在初始化后设置）
+let i18n = null;
+
 /**
  * 游戏状态
  */
@@ -40,6 +43,12 @@ let givenMask = null;     // 9x9 布尔，true 表示预填（不可编辑）
  */
 async function init() {
   try {
+    // 初始化多语言系统（优先初始化）
+    await initializeI18n();
+
+    // 设置全局i18n引用
+    i18n = window.i18n;
+
     // 初始化各个模块
     initBoardRenderer('#board');
     initTimer('#timer');
@@ -57,11 +66,10 @@ async function init() {
     renderRecords();
   } catch (error) {
     console.error('初始化失败:', error);
-    showError(i18n.t('errors.authFailed'));
+    if (i18n) {
+      showError(i18n.t('errors.authFailed'));
+    }
   }
-
-  // 初始化多语言系统
-  await initializeI18n();
 }
 
 /**
@@ -142,17 +150,24 @@ async function handleNewGame() {
  * 处理重置
  */
 function handleReset() {
+  console.log('handleReset called');
   if (!puzzle) {
     showWarning(i18n.t('errors.pleaseGenerate'));
     return;
   }
 
+  console.log('Resetting game...');
   stopTimer();
+  console.log('Timer stopped');
   renderBoard(puzzle, givenMask);
+  console.log('Board rendered');
   resetTimer();
+  console.log('Timer reset');
   startTimer();
+  console.log('Timer started');
 
   showToast(i18n.t('status.gameReset'), 'info');
+  console.log('Reset complete, emitting game:reset event');
   emit('game:reset');
 }
 
@@ -161,8 +176,11 @@ function handleReset() {
  */
 async function initializeI18n() {
   try {
+    console.log('Initializing i18n, current language:', i18n.currentLang);
+
     // 加载当前语言的翻译
     await i18n.loadTranslations(i18n.currentLang);
+    console.log('Loaded translations:', Object.keys(i18n.translations));
 
     // 更新DOM中的翻译
     i18n.updateDOM();
@@ -172,18 +190,36 @@ async function initializeI18n() {
     if (languageSelector) {
       languageSelector.value = i18n.currentLang;
 
-      // 监听语言切换事件
-      languageSelector.addEventListener('change', async (e) => {
+      // 移除旧的事件监听器（如果存在）
+      if (languageSelector._i18nChangeHandler) {
+        languageSelector.removeEventListener('change', languageSelector._i18nChangeHandler);
+      }
+
+      // 创建新的事件处理函数并保存引用
+      languageSelector._i18nChangeHandler = async (e) => {
         const newLang = e.target.value;
+        console.log('Language changed to:', newLang);
         await i18n.setLanguage(newLang);
-      });
+      };
+
+      // 监听语言切换事件
+      languageSelector.addEventListener('change', languageSelector._i18nChangeHandler);
     }
 
-    // 监听语言变更事件，更新需要动态翻译的内容
-    window.addEventListener('languageChanged', (e) => {
+    // 移除旧的语言变更事件监听器（如果存在）
+    if (window._i18nLanguageChangedHandler) {
+      window.removeEventListener('languageChanged', window._i18nLanguageChangedHandler);
+    }
+
+    // 创建新的事件处理函数并保存引用
+    window._i18nLanguageChangedHandler = (e) => {
+      console.log('Language changed event received:', e.detail);
       // 重新渲染记录（包含翻译的文本）
       renderRecords();
-    });
+    };
+
+    // 监听语言变更事件，更新需要动态翻译的内容
+    window.addEventListener('languageChanged', window._i18nLanguageChangedHandler);
   } catch (error) {
     console.error('Failed to initialize i18n:', error);
   }
@@ -254,7 +290,7 @@ async function handleBoardComplete() {
  */
 function handleClearRecords() {
   renderRecords();
-  showToast('记录已清除', 'info');
+  showToast(i18n.t('status.recordsCleared'), 'info');
 }
 
 /**

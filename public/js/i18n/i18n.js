@@ -76,6 +76,7 @@ class I18n {
       return;
     }
 
+    console.log('Setting language to:', lang);
     await this.loadTranslations(lang);
     this.currentLang = lang;
     localStorage.setItem('language', lang);
@@ -86,6 +87,7 @@ class I18n {
     // 触发语言变更事件
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
 
+    console.log('Updating DOM with new translations');
     this.updateDOM();
   }
 

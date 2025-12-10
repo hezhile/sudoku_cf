@@ -77,6 +77,7 @@
     "loggedOut": "已登出",
     "logoutFailed": "登出失败",
     "notLoggedIn": "未登录",
-    "recordsCleared": "记录已清除"
+    "recordsCleared": "记录已清除",
+    "gameReset": "游戏已重置"
   }
 }
