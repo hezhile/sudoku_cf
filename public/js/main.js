@@ -180,8 +180,7 @@ function handleReset() {
     window._isResetting = false;
   }, 100);
 
-  console.log('Reset complete, emitting game:reset event');
-  emit('game:reset');
+  console.log('Reset complete');
 }
 
 /**
