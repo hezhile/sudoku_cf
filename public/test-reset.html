@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试重置按钮 - 数独游戏</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .toast {
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-template-rows: repeat(9, 40px);
+            gap: 1px;
+            background: #ccc;
+            padding: 2px;
+            margin: 20px 0;
+        }
+        .cell {
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .cell.prefilled {
+            background: #f0f0f0;
+        }
+        .cell.conflict {
+            background: #ffcccc;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试重置按钮功能</h1>
+
+    <div class="test-section">
+        <h2>测试步骤</h2>
+        <ol>
+            <li>点击"新游戏"生成一个数独题目</li>
+            <li>在空白格子中输入一些数字</li>
+            <li>点击"重置"按钮</li>
+            <li>在弹出的确认框中点击"确定"</li>
+            <li>观察控制台输出和toast通知</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>控制按钮</h2>
+        <button id="newGameBtn">新游戏</button>
+        <button id="resetBtn">重置</button>
+        <button id="clearConsoleBtn">清空控制台</button>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="test-section">
+        <h2>控制台输出</h2>
+        <div class="console-output" id="consoleOutput"></div>
+    </div>
+
+    <script type="module">
+        // 简化的测试版本
+        let solution = null;
+        let puzzle = null;
+        let givenMask = null;
+        let isResetting = false;
+
+        // 模拟i18n
+        const i18n = {
+            t: (key) => {
+                const translations = {
+                    'status.gameReset': '游戏已重置',
+                    'errors.pleaseGenerate': '请先生成题目'
+                };
+                return translations[key] || key;
+            }
+        };
+
+        // 控制台输出
+        function log(message) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.innerHTML += `[${timestamp}] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+
+        // Toast通知
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            log(`显示Toast: "${message}"`);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // 生成简单题目
+        function generatePuzzle() {
+            // 创建一个简单的数独题目
+            const board = Array.from({length: 9}, () => Array(9).fill(0));
+
+            // 填充一些数字
+            board[0][0] = 5;
+            board[0][1] = 3;
+            board[0][4] = 7;
+            board[1][0] = 6;
+            board[1][3] = 1;
+            board[1][4] = 9;
+            board[1][5] = 5;
+
+            // 挖空一些格子
+            const puzzle = board.map(row => [...row]);
+            const givenMask = board.map(row => row.map(cell => cell !== 0));
+
+            // 挖空更多格子
+            puzzle[2][2] = 0;
+            puzzle[2][3] = 0;
+            puzzle[3][0] = 0;
+            puzzle[3][1] = 0;
+
+            return { puzzle, givenMask, solution: board };
+        }
+
+        // 渲染棋盘
+        function renderBoard(board, given) {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+
+                    if (given[r][c]) {
+                        cell.classList.add('prefilled');
+                        cell.textContent = board[r][c] || '';
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.dataset.r = r;
+                        input.dataset.c = c;
+                        input.value = board[r][c] ? board[r][c] : '';
+
+                        input.addEventListener('input', (e) => {
+                            log(`输入事件: 位置[${r},${c}], 值: ${e.target.value}`);
+
+                            // 模拟检查自动完成
+                            if (!isResetting) {
+                                checkAutoComplete();
+                            }
+                        });
+
+                        cell.appendChild(input);
+                    }
+
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 检查自动完成（模拟）
+        function checkAutoComplete() {
+            log('检查自动完成...');
+            // 这里模拟可能触发多次的情况
+            setTimeout(() => {
+                log('自动完成检查完成');
+            }, 50);
+        }
+
+        // 处理新游戏
+        function handleNewGame() {
+            log('=== 开始新游戏 ===');
+            const result = generatePuzzle();
+            puzzle = result.puzzle;
+            givenMask = result.givenMask;
+            solution = result.solution;
+            renderBoard(puzzle, givenMask);
+            log('新游戏生成完成');
+        }
+
+        // 处理重置
+        function handleReset() {
+            log('=== 处理重置 ===');
+            log(`puzzle存在: ${!!puzzle}`);
+
+            if (!puzzle) {
+                showToast(i18n.t('errors.pleaseGenerate'));
+                return;
+            }
+
+            log('开始重置流程...');
+
+            // 设置重置标志
+            isResetting = true;
+            log(`设置isResetting = true`);
+
+            // 重新渲染棋盘
+            renderBoard(puzzle, givenMask);
+            log('棋盘已重新渲染');
+
+            // 延迟显示toast
+            setTimeout(() => {
+                log('显示重置toast');
+                showToast(i18n.t('status.gameReset'));
+
+                // 清除重置标志
+                setTimeout(() => {
+                    isResetting = false;
+                    log(`清除isResetting标志，设置为false`);
+                }, 100);
+            }, 100);
+
+            log('重置流程完成');
+        }
+
+        // 绑定事件
+        document.getElementById('newGameBtn').addEventListener('click', handleNewGame);
+        document.getElementById('resetBtn').addEventListener('click', handleReset);
+        document.getElementById('clearConsoleBtn').addEventListener('click', () => {
+            document.getElementById('consoleOutput').innerHTML = '';
+        });
+
+        log('测试页面已加载完成');
+    </script>
+</body>
+</html>

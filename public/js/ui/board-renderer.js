@@ -84,9 +84,9 @@ export function renderBoard(board, given) {
         input.dataset.c = c;
         input.value = board[r][c] ? board[r][c] : '';
 
-        // 事件监听
-        input.addEventListener('input', onCellInput);
-        input.addEventListener('keydown', onCellKeyDown);
+        // 事件监听 - 使用 passive 事件监听器
+        input.addEventListener('input', onCellInput, { passive: true });
+        input.addEventListener('keydown', onCellKeyDown, { passive: true });
 
         cell.appendChild(input);
       }
@@ -109,6 +109,13 @@ export function renderBoard(board, given) {
  */
 function onCellInput(e) {
   const input = e.target;
+  console.log('onCellInput called, isResetting:', isResetting);
+
+  // 如果正在重置，不处理输入事件
+  if (isResetting) {
+    console.log('Skipping input event due to reset');
+    return;
+  }
 
   // 只保留 1-9 的数字
   const raw = input.value.replace(/[^\d]/g, '');
@@ -251,24 +258,43 @@ export function readUserBoard() {
  * 检查是否自动完成
  */
 function checkAutoComplete() {
+  console.log('checkAutoComplete called, isResetting:', isResetting);
   // 如果正在重置，不进行检查
-  if (isResetting) return;
+  if (isResetting) {
+    console.log('Skipping auto-complete check due to reset');
+    return;
+  }
 
-  const board = readUserBoard();
+  // 添加防抖，防止短时间内多次调用
+  if (window._checkCompleteTimeout) {
+    clearTimeout(window._checkCompleteTimeout);
+  }
 
-  // 检查是否全部填满
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (board[r][c] === 0) return;
+  window._checkCompleteTimeout = setTimeout(() => {
+    const board = readUserBoard();
+    console.log('Board state:', board);
+
+    // 检查是否全部填满
+    for (let r = 0; r < GRID_SIZE; r++) {
+      for (let c = 0; c < GRID_SIZE; c++) {
+        if (board[r][c] === 0) {
+          console.log('Board not complete, cell [', r, ',', c, '] is empty');
+          return;
+        }
+      }
     }
-  }
 
-  // 检查是否有冲突
-  const hasConflict = !!boardElement.querySelector('.conflict');
-  if (!hasConflict) {
-    // 触发完成事件
-    emit('board:complete', { board });
-  }
+    console.log('Board is complete, checking for conflicts...');
+    // 检查是否有冲突
+    const hasConflict = !!boardElement.querySelector('.conflict');
+    if (!hasConflict) {
+      console.log('No conflicts found, emitting board:complete');
+      // 触发完成事件
+      emit('board:complete', { board });
+    } else {
+      console.log('Conflicts found, not completing');
+    }
+  }, 100); // 延迟100ms执行，避免重复触发
 }
 
 /**

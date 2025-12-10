@@ -150,12 +150,19 @@ async function handleNewGame() {
  * 处理重置
  */
 function handleReset() {
-  console.log('handleReset called');
+  console.log('handleReset called, puzzle exists:', !!puzzle);
   if (!puzzle) {
     showWarning(i18n.t('errors.pleaseGenerate'));
     return;
   }
 
+  // 防止重复重置
+  if (window._isResetting) {
+    console.log('Reset already in progress, ignoring');
+    return;
+  }
+
+  window._isResetting = true;
   console.log('Resetting game...');
   stopTimer();
   console.log('Timer stopped');
@@ -166,7 +173,13 @@ function handleReset() {
   startTimer();
   console.log('Timer started');
 
-  showToast(i18n.t('status.gameReset'), 'info');
+  // 延迟显示toast，确保其他操作完成
+  setTimeout(() => {
+    console.log('Showing reset toast');
+    showToast(i18n.t('status.gameReset'), 'info');
+    window._isResetting = false;
+  }, 100);
+
   console.log('Reset complete, emitting game:reset event');
   emit('game:reset');
 }
@@ -229,15 +242,19 @@ async function initializeI18n() {
  * 处理棋盘完成
  */
 async function handleBoardComplete() {
+  console.log('handleBoardComplete called');
   if (!solution) {
+    console.log('No solution, showing error');
     showError(i18n.t('errors.gameNotStarted'));
     return;
   }
 
   const userBoard = readUserBoard();
+  console.log('Validating solution...');
 
   // 验证解答
   const { isCorrect, errors } = validateSolution(userBoard, solution);
+  console.log('Validation result:', isCorrect, errors);
 
   if (isCorrect) {
     // 停止计时器
@@ -280,7 +297,7 @@ async function handleBoardComplete() {
       uploaded
     });
   } else {
-    showError('答案不正确，请检查标记的冲突');
+    showError(i18n.t('errors.incorrectAnswer'));
     emit('game:failed', { errors });
   }
 }

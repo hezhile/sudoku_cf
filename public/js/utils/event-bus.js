@@ -20,7 +20,13 @@ export function on(event, handler) {
   if (!events[event]) {
     events[event] = [];
   }
-  events[event].push(handler);
+  // 检查是否已经注册了这个处理器
+  if (!events[event].includes(handler)) {
+    events[event].push(handler);
+    console.log(`Registered handler for event '${event}', total handlers: ${events[event].length}`);
+  } else {
+    console.warn(`Handler already registered for event '${event}', skipping duplicate`);
+  }
 }
 
 /**
@@ -45,8 +51,10 @@ export function off(event, handler) {
  */
 export function emit(event, data) {
   if (events[event]) {
-    events[event].forEach(handler => {
+    console.log(`Emitting event '${event}' with ${events[event].length} handlers`);
+    events[event].forEach((handler, index) => {
       try {
+        console.log(`Calling handler ${index} for event '${event}'`);
         handler(data);
       } catch (error) {
         console.error(`Error in event handler for '${event}':`, error);

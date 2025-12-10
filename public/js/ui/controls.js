@@ -22,6 +22,12 @@ let clearRecordsBtn = null;
  * initializeControls();
  */
 export function initializeControls() {
+  // 防止重复初始化
+  if (window._controlsInitialized) {
+    console.log('Controls already initialized, skipping');
+    return;
+  }
+
   // 获取 DOM 元素
   difficultyEl = document.getElementById('difficulty');
   newBtn = document.getElementById('newBtn');
@@ -45,6 +51,7 @@ export function initializeControls() {
     difficultyEl.addEventListener('change', handleDifficultyChange);
   }
 
+  window._controlsInitialized = true;
   console.log('Controls initialized');
 }
 
