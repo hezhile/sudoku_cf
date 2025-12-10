@@ -3,7 +3,8 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(python -m json.tool:*)"
     ]
   }
 }
