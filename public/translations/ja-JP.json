@@ -70,8 +70,8 @@
     }
   },
   "records": {
-    "recent": "（最近：{{time}}）",
-    "best": "ベスト：{{time}}"
+    "recent": "最近の結果：{{time}}",
+    "best": "最高記録：{{time}}"
   },
   "status": {
     "loggedOut": "ログアウトしました",
