@@ -3,7 +3,7 @@
  * @module storage/local-storage
  */
 
-import { STORAGE_KEY, DIFFICULTY_LABELS } from '../config/constants.js';
+import { STORAGE_KEY } from '../config/constants.js';
 import { emit } from '../utils/event-bus.js';
 import { safeJSONParse, safeJSONStringify } from '../utils/helpers.js';
 import { showWarning, showError } from '../ui/toast.js';
