@@ -6,7 +6,8 @@
       "Bash(git add:*)",
       "Bash(python -m json.tool:*)",
       "Bash(python -m http.server:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: resolve multiple logic errors and improve memory management\n\n- Fix i18n loading race condition by implementing Promise caching mechanism\n- Unify reset protection mechanism using event bus global state\n- Improve prefilled cell data storage with dataset backup\n- Add comprehensive event listener cleanup mechanism\n- Add global state management to event bus\n- Create listener-manager utility for proper event handling\n\nThis fixes potential memory leaks, state inconsistencies, and improves overall application stability.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: resolve multiple logic errors and improve memory management\n\n- Fix i18n loading race condition by implementing Promise caching mechanism\n- Unify reset protection mechanism using event bus global state\n- Improve prefilled cell data storage with dataset backup\n- Add comprehensive event listener cleanup mechanism\n- Add global state management to event bus\n- Create listener-manager utility for proper event handling\n\nThis fixes potential memory leaks, state inconsistencies, and improves overall application stability.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ]
   }
 }
