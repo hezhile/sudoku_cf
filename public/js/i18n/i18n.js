@@ -11,11 +11,13 @@ class I18n {
     }
 
     try {
+      console.log(`Loading translations for: ${lang}`);
       const response = await fetch(`/translations/${lang}.json`);
       if (!response.ok) {
         throw new Error(`Failed to load translations for ${lang}`);
       }
       this.translations[lang] = await response.json();
+      console.log(`Successfully loaded translations for ${lang}`, Object.keys(this.translations[lang]));
     } catch (error) {
       console.error('Failed to load translations:', error);
       // 如果加载失败，尝试加载回退语言
@@ -26,19 +28,7 @@ class I18n {
   }
 
   t(key, params = {}) {
-    // 获取当前语言的翻译
-    let translation = this.translations[this.currentLang]?.[key];
-
-    // 如果没有找到翻译，尝试回退语言
-    if (!translation && this.currentLang !== this.fallbackLang) {
-      translation = this.translations[this.fallbackLang]?.[key];
-    }
-
-    // 如果仍然没有找到，返回key本身
-    if (!translation) {
-      console.warn(`Translation not found for key: ${key}`);
-      return key;
-    }
+    let translation;
 
     // 处理嵌套key（如 errors.generationFailed）
     if (key.includes('.')) {
@@ -58,7 +48,21 @@ class I18n {
         }
       }
 
-      translation = value || key;
+      translation = value;
+    } else {
+      // 获取当前语言的翻译
+      translation = this.translations[this.currentLang]?.[key];
+
+      // 如果没有找到翻译，尝试回退语言
+      if (!translation && this.currentLang !== this.fallbackLang) {
+        translation = this.translations[this.fallbackLang]?.[key];
+      }
+    }
+
+    // 如果仍然没有找到，返回key本身
+    if (!translation) {
+      console.warn(`Translation not found for key: ${key}`);
+      return key;
     }
 
     // 替换参数
@@ -92,9 +96,13 @@ class I18n {
   }
 
   updateDOM() {
+    console.log('updateDOM called, currentLang:', this.currentLang);
+    console.log('Available translations:', Object.keys(this.translations));
+
     // 更新所有带有 data-i18n 属性的元素
     document.querySelectorAll('[data-i18n]').forEach(element => {
       const key = element.getAttribute('data-i18n');
+      console.log('Translating key:', key);
       const translation = this.t(key);
       if (translation) {
         element.textContent = translation;
@@ -166,10 +174,13 @@ window.i18n = new I18n();
 
 // 自动初始化并更新DOM
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    await window.i18n.loadTranslations(window.i18n.currentLang);
     window.i18n.updateDOM();
   });
 } else {
   // 如果DOM已经加载完成，立即更新
-  window.i18n.updateDOM();
+  window.i18n.loadTranslations(window.i18n.currentLang).then(() => {
+    window.i18n.updateDOM();
+  });
 }
