@@ -103,7 +103,7 @@ export function validateSolution(userBoard, solutionBoard) {
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
       if (userBoard[r][c] === 0) {
-        errors.push('还有空格未填写');
+        errors.push(i18n.t('errors.emptyCells'));
         return { isCorrect: false, errors };
       }
     }
@@ -112,7 +112,7 @@ export function validateSolution(userBoard, solutionBoard) {
   // 检查冲突
   const { hasConflicts, conflicts } = detectConflicts(userBoard);
   if (hasConflicts) {
-    errors.push(`存在 ${conflicts.size} 处冲突`);
+    errors.push(i18n.t('errors.conflicts', { count: conflicts.size }));
     return { isCorrect: false, errors };
   }
 
@@ -121,7 +121,7 @@ export function validateSolution(userBoard, solutionBoard) {
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
         if (userBoard[r][c] !== solutionBoard[r][c]) {
-          errors.push('答案与标准解不一致');
+          errors.push(i18n.t('errors.incorrectAnswer'));
           return { isCorrect: false, errors };
         }
       }

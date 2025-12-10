@@ -1,0 +1,82 @@
+{
+  "title": "Sudoku - Free Sudoku Puzzles Online",
+  "gameTitle": "Sudoku",
+  "emailPlaceholder": "Enter email to receive login link",
+  "login": "Login",
+  "logout": "Logout",
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "expert": "Expert"
+  },
+  "newGame": "New Game",
+  "reset": "Reset",
+  "localRecords": "Local Records",
+  "uploadSync": "Upload & Sync",
+  "clearRecords": "Clear Records",
+  "changelog": "Changelog",
+  "welcome": "Welcome, {{email}}",
+  "puzzleGenerated": "difficulty puzzle generated",
+  "gameComplete": "Congratulations! Completed in {{time}}",
+  "confirmReset": "Are you sure you want to reset the game?",
+  "confirmClear": "Are you sure you want to clear all local records?",
+  "errors": {
+    "authFailed": "Authentication system failed to load",
+    "invalidEmail": "Invalid email format",
+    "generationFailed": "Failed to generate puzzle, please try again",
+    "networkError": "Network connection failed",
+    "operationFailed": "Operation failed, please try again",
+    "storageFull": "Storage full, please clear old records",
+    "saveFailed": "Save failed, please check browser settings",
+    "invalidData": "Invalid backup data",
+    "importFailed": "Import failed: ",
+    "syncFailed": "Sync failed, will retry on next login",
+    "emptyEmail": "Please enter your email",
+    "sendFailed": "Failed to send: ",
+    "unknown": "Unknown error",
+    "logoutFailed": "Logout failed",
+    "gameReset": "Game has been reset",
+    "pleaseGenerate": "Please generate a puzzle first",
+    "gameNotStarted": "Game not started",
+    "emptyCells": "There are still empty cells",
+    "conflicts": "There are {{count}} conflicts",
+    "incorrectAnswer": "Answer does not match the standard solution"
+  },
+  "buttons": {
+    "sending": "Sending...",
+    "generating": "Generating...",
+    "sent": "Login email sent, please check your inbox",
+    "synced": "Synced {{count}} records"
+  },
+  "demo": {
+    "title": "Batch 2 Demo - Sudoku Game",
+    "header": "🧪 Batch 2 Demo",
+    "description": "This page is for testing UI and storage modules",
+    "features": {
+      "board": "✅ Board rendering and interaction",
+      "timer": "✅ Timer functionality",
+      "controls": "✅ Control buttons",
+      "storage": "✅ Local storage"
+    },
+    "steps": {
+      "title": "📝 Test Steps",
+      "step1": "Click the 'New Game' button to generate a puzzle",
+      "step2": "Enter numbers (1-9) in empty cells",
+      "step3": "Use arrow keys to move focus",
+      "step4": "Watch conflict highlighting (duplicate numbers turn red)",
+      "step5": "Observe the timer running",
+      "step6": "Check if records are saved after completion"
+    }
+  },
+  "records": {
+    "recent": "(Recent: {{time}})",
+    "best": "Best: {{time}}"
+  },
+  "status": {
+    "loggedOut": "Logged out",
+    "logoutFailed": "Logout failed",
+    "notLoggedIn": "Not logged in",
+    "recordsCleared": "Records cleared"
+  }
+}

@@ -98,11 +98,11 @@ export async function syncLocalRecordsToSupabase(userId) {
     // 更新 best_scores
     await updateBestScores(userId, records);
 
-    showSuccess(`已同步 ${rowsToInsert.length} 条记录`);
+    showSuccess(i18n.t('buttons.synced', { count: rowsToInsert.length }));
     emit('sync:completed', { count: rowsToInsert.length });
   } catch (error) {
     console.error('同步失败:', error);
-    showWarning('同步失败，将在下次登录时重试');
+    showWarning(i18n.t('errors.syncFailed'));
     emit('sync:failed', { error });
   }
 }

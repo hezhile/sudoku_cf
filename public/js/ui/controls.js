@@ -56,7 +56,7 @@ function handleNewGame() {
  * 处理重置按钮点击
  */
 function handleReset() {
-  if (confirm('确定要重置游戏吗？')) {
+  if (confirm(i18n.t('confirmReset'))) {
     emit('game:reset');
   }
 }
@@ -65,7 +65,7 @@ function handleReset() {
  * 处理清除记录按钮点击
  */
 function handleClearRecords() {
-  if (confirm('确定清除所有本地记录？')) {
+  if (confirm(i18n.t('confirmClear'))) {
     emit('records:clear');
   }
 }
@@ -140,12 +140,12 @@ export function setLoading(loading) {
   if (loading) {
     disableControls();
     if (newBtn) {
-      newBtn.textContent = '生成中...';
+      newBtn.textContent = i18n.t('buttons.generating');
     }
   } else {
     enableControls();
     if (newBtn) {
-      newBtn.textContent = '新游戏';
+      newBtn.textContent = i18n.t('newGame');
     }
   }
 }

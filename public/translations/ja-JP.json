@@ -1,0 +1,82 @@
+{
+  "title": "数独 - 無料オンライン数独パズル",
+  "gameTitle": "数独",
+  "emailPlaceholder": "ログインリンクを受け取るメールアドレスを入力",
+  "login": "ログイン",
+  "logout": "ログアウト",
+  "difficulty": {
+    "easy": "簡単",
+    "medium": "中級",
+    "hard": "難しい",
+    "expert": "エキスパート"
+  },
+  "newGame": "新しいゲーム",
+  "reset": "リセット",
+  "localRecords": "ローカル記録",
+  "uploadSync": "アップロード＆同期",
+  "clearRecords": "記録をクリア",
+  "changelog": "更新履歴",
+  "welcome": "ようこそ、{{email}}",
+  "puzzleGenerated": "難易度のパズルが生成されました",
+  "gameComplete": "おめでとうございます！{{time}}でクリアしました",
+  "confirmReset": "ゲームをリセットしてもよろしいですか？",
+  "confirmClear": "すべてのローカル記録をクリアしてもよろしいですか？",
+  "errors": {
+    "authFailed": "認証システムの読み込みに失敗しました",
+    "invalidEmail": "メールアドレスの形式が正しくありません",
+    "generationFailed": "パズルの生成に失敗しました。もう一度お試しください",
+    "networkError": "ネットワーク接続に失敗しました",
+    "operationFailed": "操作に失敗しました。もう一度お試しください",
+    "storageFull": "ストレージがいっぱいです。古い記録を削除してください",
+    "saveFailed": "保存に失敗しました。ブラウザの設定を確認してください",
+    "invalidData": "無効なバックアップデータです",
+    "importFailed": "インポートに失敗しました：",
+    "syncFailed": "同期に失敗しました。次回ログイン時に再試行します",
+    "emptyEmail": "メールアドレスを入力してください",
+    "sendFailed": "送信に失敗しました：",
+    "unknown": "不明なエラー",
+    "logoutFailed": "ログアウトに失敗しました",
+    "gameReset": "ゲームがリセットされました",
+    "pleaseGenerate": "まずパズルを生成してください",
+    "gameNotStarted": "ゲームが開始されていません",
+    "emptyCells": "空のセルがあります",
+    "conflicts": "{{count}}か所の競合があります",
+    "incorrectAnswer": "答えが標準解と一致しません"
+  },
+  "buttons": {
+    "sending": "送信中...",
+    "generating": "生成中...",
+    "sent": "ログインメールを送信しました。受信トレイをご確認ください",
+    "synced": "{{count}}件の記録を同期しました"
+  },
+  "demo": {
+    "title": "バッチ2デモ - 数独ゲーム",
+    "header": "🧪 バッチ2デモ",
+    "description": "このページはUIとストレージモジュールのテスト用です",
+    "features": {
+      "board": "✅ ボードのレンダリングとインタラクション",
+      "timer": "✅ タイマー機能",
+      "controls": "✅ コントロールボタン",
+      "storage": "✅ ローカルストレージ"
+    },
+    "steps": {
+      "title": "📝 テスト手順",
+      "step1": "「新しいゲーム」ボタンをクリックしてパズルを生成",
+      "step2": "空のセルに数字（1-9）を入力",
+      "step3": "矢印キーでフォーカスを移動",
+      "step4": "競合のハイライトを観察（重複する数字が赤くなる）",
+      "step5": "タイマーの動作を観察",
+      "step6": "完了後に記録が保存されるか確認"
+    }
+  },
+  "records": {
+    "recent": "（最近：{{time}}）",
+    "best": "ベスト：{{time}}"
+  },
+  "status": {
+    "loggedOut": "ログアウトしました",
+    "logoutFailed": "ログアウトに失敗しました",
+    "notLoggedIn": "ログインしていません",
+    "recordsCleared": "記録をクリアしました"
+  }
+}

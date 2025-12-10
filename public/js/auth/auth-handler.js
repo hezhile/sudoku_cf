@@ -84,7 +84,7 @@ export async function initAuth() {
     });
   } catch (error) {
     console.error('认证模块初始化失败:', error);
-    showError('认证系统加载失败');
+    showError(i18n.t('errors.authFailed'));
     emit('auth:error', { error });
   }
 }
@@ -97,20 +97,20 @@ async function handleLogin() {
 
   const email = emailInput.value.trim();
   if (!email) {
-    showWarning('请输入邮箱');
+    showWarning(i18n.t('errors.emptyEmail'));
     return;
   }
 
   // 简单的邮箱格式验证
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    showWarning('邮箱格式不正确');
+    showWarning(i18n.t('errors.invalidEmail'));
     return;
   }
 
   try {
     loginBtn.disabled = true;
-    loginBtn.textContent = '发送中...';
+    loginBtn.textContent = i18n.t('buttons.sending');
 
     const redirectTo = window.location.href;
     const { data, error } = await supabase.auth.signInWithOtp({
@@ -122,17 +122,17 @@ async function handleLogin() {
       throw error;
     }
 
-    showSuccess('登录邮件已发送，请查收邮箱');
+    showSuccess(i18n.t('buttons.sent'));
     emailInput.value = '';
     emit('auth:magic-link-sent', { email });
   } catch (error) {
     console.error('发送登录邮件失败:', error);
-    showError('发送失败：' + (error.message || '未知错误'));
+    showError(i18n.t('errors.sendFailed') + (error.message || i18n.t('errors.unknown')));
     emit('auth:error', { error, operation: 'login' });
   } finally {
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = '登录';
+      loginBtn.textContent = i18n.t('login');
     }
   }
 }
@@ -147,10 +147,10 @@ async function handleLogout() {
     }
 
     await supabase.auth.signOut();
-    showSuccess('已登出');
+    showSuccess(i18n.t('status.loggedOut'));
   } catch (error) {
     console.error('登出失败:', error);
-    showError('登出失败');
+    showError(i18n.t('errors.logoutFailed'));
     emit('auth:error', { error, operation: 'logout' });
   } finally {
     if (logoutBtn) {
@@ -164,7 +164,7 @@ async function handleLogout() {
  */
 async function handleManualSync() {
   if (!currentSession) {
-    showWarning('未登录');
+    showWarning(i18n.t('status.notLoggedIn'));
     return;
   }
 
@@ -172,7 +172,7 @@ async function handleManualSync() {
     emit('sync:manual-trigger', { userId: currentSession.user.id });
   } catch (error) {
     console.error('手动同步失败:', error);
-    showError('同步失败');
+    showError(i18n.t('errors.syncFailed'));
   }
 }
 

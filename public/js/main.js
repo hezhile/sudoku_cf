@@ -57,8 +57,11 @@ async function init() {
     renderRecords();
   } catch (error) {
     console.error('初始化失败:', error);
-    showError('应用初始化失败，请刷新页面');
+    showError(i18n.t('errors.authFailed'));
   }
+
+  // 初始化多语言系统
+  await initializeI18n();
 }
 
 /**
@@ -75,7 +78,7 @@ function registerEventHandlers() {
 
   // 认证事件（可选的额外处理）
   on('auth:login', ({ user }) => {
-    showSuccess(`欢迎，${user.email}`);
+    showSuccess(i18n.t('welcome', { email: user.email }));
   });
 
   // 同步事件
@@ -100,7 +103,7 @@ async function handleNewGame() {
   try {
     setLoading(true);
     stopTimer();
-    setTimerDisplay('生成中...');
+    setTimerDisplay(i18n.t('buttons.generating'));
 
     // 延迟让 UI 更新
     await new Promise(r => setTimeout(r, 100));
@@ -125,11 +128,11 @@ async function handleNewGame() {
     startTimer();
 
     setLoading(false);
-    showSuccess(`${DIFFICULTY_LABELS[difficulty]} 难度题目已生成`);
+    showSuccess(i18n.t('puzzleGenerated', { difficulty: i18n.t(`difficulty.${difficulty}`) }));
     emit('game:started', { difficulty });
   } catch (error) {
     console.error('生成失败:', error);
-    showError('生成题目失败，请重试');
+    showError(i18n.t('errors.generationFailed'));
     setLoading(false);
     emit('error:generation', { error });
   }
@@ -140,7 +143,7 @@ async function handleNewGame() {
  */
 function handleReset() {
   if (!puzzle) {
-    showWarning('请先生成题目');
+    showWarning(i18n.t('errors.pleaseGenerate'));
     return;
   }
 
@@ -149,8 +152,41 @@ function handleReset() {
   resetTimer();
   startTimer();
 
-  showToast('游戏已重置', 'info');
+  showToast(i18n.t('status.gameReset'), 'info');
   emit('game:reset');
+}
+
+/**
+ * 初始化多语言系统
+ */
+async function initializeI18n() {
+  try {
+    // 加载当前语言的翻译
+    await i18n.loadTranslations(i18n.currentLang);
+
+    // 更新DOM中的翻译
+    i18n.updateDOM();
+
+    // 设置语言选择器的当前值
+    const languageSelector = document.getElementById('language-selector');
+    if (languageSelector) {
+      languageSelector.value = i18n.currentLang;
+
+      // 监听语言切换事件
+      languageSelector.addEventListener('change', async (e) => {
+        const newLang = e.target.value;
+        await i18n.setLanguage(newLang);
+      });
+    }
+
+    // 监听语言变更事件，更新需要动态翻译的内容
+    window.addEventListener('languageChanged', (e) => {
+      // 重新渲染记录（包含翻译的文本）
+      renderRecords();
+    });
+  } catch (error) {
+    console.error('Failed to initialize i18n:', error);
+  }
 }
 
 /**
@@ -158,7 +194,7 @@ function handleReset() {
  */
 async function handleBoardComplete() {
   if (!solution) {
-    showError('游戏未开始');
+    showError(i18n.t('errors.gameNotStarted'));
     return;
   }
 
@@ -200,7 +236,7 @@ async function handleBoardComplete() {
     renderRecords();
 
     // 显示成功消息
-    showSuccess(`恭喜完成！用时：${formatTime(elapsed)}`);
+    showSuccess(i18n.t('gameComplete', { time: formatTime(elapsed) }));
 
     emit('game:completed', {
       difficulty,
