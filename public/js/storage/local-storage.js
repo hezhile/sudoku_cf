@@ -26,6 +26,11 @@ export function loadRecords() {
     const records = safeJSONParse(raw, {});
     return migrateOldFormat(records);
   } catch (error) {
+    // 处理隐私模式或localStorage不可用的情况
+    if (error.name === 'SecurityError' || error.name === 'TypeError') {
+      console.warn('localStorage is not available (privacy mode), returning empty records');
+      return {};
+    }
     console.error('加载记录失败:', error);
     emit('storage:error', { error, operation: 'load' });
     return {};
@@ -44,6 +49,13 @@ export function saveRecords(records) {
     localStorage.setItem(STORAGE_KEY, json);
     emit('records:saved', { records });
   } catch (error) {
+    // 处理隐私模式或localStorage不可用的情况
+    if (error.name === 'SecurityError' || error.name === 'TypeError') {
+      console.warn('localStorage is not available (privacy mode), records will not be saved');
+      // 在隐私模式下，仍然触发事件以保持应用正常运行
+      emit('records:saved', { records });
+      return;
+    }
     console.error('保存记录失败:', error);
 
     if (error.name === 'QuotaExceededError') {
@@ -110,6 +122,12 @@ export function clearRecords() {
     localStorage.removeItem(STORAGE_KEY);
     emit('records:cleared');
   } catch (error) {
+    // 处理隐私模式或localStorage不可用的情况
+    if (error.name === 'SecurityError' || error.name === 'TypeError') {
+      console.warn('localStorage is not available (privacy mode), no records to clear');
+      emit('records:cleared');
+      return;
+    }
     console.error('清除记录失败:', error);
     emit('storage:error', { error, operation: 'clear' });
   }

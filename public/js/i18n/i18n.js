@@ -1,6 +1,12 @@
 class I18n {
   constructor() {
-    this.currentLang = localStorage.getItem('language') || 'zh-CN';
+    // 安全地获取语言设置，支持隐私模式
+    try {
+      this.currentLang = localStorage.getItem('language') || 'zh-CN';
+    } catch (error) {
+      console.warn('localStorage is not available, using default language:', error);
+      this.currentLang = 'zh-CN';
+    }
     this.translations = {};
     this.fallbackLang = 'zh-CN';
     this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
@@ -106,7 +112,13 @@ class I18n {
     console.log('Setting language to:', lang);
     await this.loadTranslations(lang);
     this.currentLang = lang;
-    localStorage.setItem('language', lang);
+
+    // 安全地保存语言设置，支持隐私模式
+    try {
+      localStorage.setItem('language', lang);
+    } catch (error) {
+      console.warn('Cannot save language preference to localStorage:', error);
+    }
 
     // 更新HTML的lang属性
     document.documentElement.lang = lang;
