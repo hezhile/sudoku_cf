@@ -237,8 +237,7 @@ async function initializeI18n() {
     uiListeners.clear();
 
     // 添加语言变更事件监听器
-    uiListeners.add(window, 'languageChanged', (e) => {
-      console.log('Language changed event received:', e.detail);
+    uiListeners.add(window, 'languageChanged', () => {
       // 重新渲染记录（包含翻译的文本）
       renderRecords();
     });

@@ -116,6 +116,9 @@ class I18n {
 
     console.log('Updating DOM with new translations');
     this.updateDOM();
+
+    // 触发翻译加载完成事件
+    window.dispatchEvent(new CustomEvent('translationsLoaded', { detail: { language: lang } }));
   }
 
   updateDOM() {

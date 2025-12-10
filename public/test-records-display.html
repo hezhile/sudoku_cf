@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Records Display</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .record-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .small {
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Records Display Test</h1>
+
+  <div>
+    <label for="language-selector">Language:</label>
+    <select id="language-selector">
+      <option value="zh-CN">中文</option>
+      <option value="en-US">English</option>
+    </select>
+  </div>
+
+  <h2>Records List:</h2>
+  <div id="recordsList"></div>
+
+  <script type="module">
+    import I18n from './js/i18n/i18n.js';
+
+    const i18n = new I18n();
+
+    // Mock stats data
+    function getAllStats() {
+      return {
+        easy: { best: 184.41, lastTime: 216.74 },
+        medium: { best: 365.15, lastTime: 500.69 },
+        hard: { best: 678.93, lastTime: 2297.07 },
+        expert: { best: 1188.49, lastTime: 1580.74 }
+      };
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      const ms = Math.floor((secs % 1) * 100);
+      return `${minutes}:${secs.toFixed(2).padStart(5, '0')}`;
+    }
+
+    function renderRecords() {
+      const stats = getAllStats();
+      const recordsList = document.getElementById('recordsList');
+
+      if (!recordsList) return;
+
+      console.log('renderRecords: current language:', i18n.currentLang);
+      console.log('renderRecords: translations available:', Object.keys(i18n.translations));
+
+      const html = ['easy', 'medium', 'hard', 'expert'].map(diff => {
+        const stat = stats[diff];
+        const bestStr = stat.best ? formatTime(stat.best) : '—';
+        const lastStr = stat.lastTime ? formatTime(stat.lastTime) : '—';
+        const label = i18n.t(`difficulty.${diff}`);
+        console.log(`renderRecords: difficulty.${diff} -> ${label}`);
+
+        return `
+          <div class="record-row">
+            <div>${label} <span class="small">${i18n.t('records.recent', { time: lastStr })}</span></div>
+            <div>${i18n.t('records.best', { time: bestStr })}</div>
+          </div>
+        `;
+      }).join('');
+
+      recordsList.innerHTML = html;
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', async () => {
+      await i18n.init();
+
+      // Set initial language
+      const lang = localStorage.getItem('language') || 'zh-CN';
+      i18n.setLanguage(lang);
+
+      // Update language selector
+      document.getElementById('language-selector').value = lang;
+
+      // Initial render
+      setTimeout(renderRecords, 100);
+
+      // Listen for language changes
+      window.addEventListener('languageChanged', () => {
+        setTimeout(renderRecords, 100);
+      });
+
+      // Handle language selector changes
+      document.getElementById('language-selector').addEventListener('change', async (e) => {
+        await i18n.setLanguage(e.target.value);
+        document.getElementById('language-selector').value = e.target.value;
+      });
+    });
+  </script>
+</body>
+</html>
