@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Mode Test</title>
+</head>
+<body>
+    <h1>隐私模式测试页面</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        const results = document.getElementById('test-results');
+
+        // 测试1: i18n初始化
+        try {
+            console.log('Testing i18n initialization...');
+            import('./public/js/i18n/i18n.js').then(() => {
+                results.innerHTML += '<p>✅ i18n模块加载成功</p>';
+                console.log('i18n initialized successfully');
+            }).catch(error => {
+                results.innerHTML += '<p>❌ i18n模块加载失败: ' + error.message + '</p>';
+                console.error('i18n failed:', error);
+            });
+        } catch (error) {
+            results.innerHTML += '<p>❌ i18n初始化错误: ' + error.message + '</p>';
+        }
+
+        // 测试2: localStorage访问
+        try {
+            localStorage.setItem('test', 'value');
+            const value = localStorage.getItem('test');
+            results.innerHTML += '<p>✅ localStorage可用: ' + value + '</p>';
+        } catch (error) {
+            results.innerHTML += '<p>⚠️ localStorage不可用 (隐私模式): ' + error.message + '</p>';
+        }
+    </script>
+</body>
+</html>
