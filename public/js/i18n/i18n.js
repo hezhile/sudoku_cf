@@ -3,28 +3,48 @@ class I18n {
     this.currentLang = localStorage.getItem('language') || 'zh-CN';
     this.translations = {};
     this.fallbackLang = 'zh-CN';
+    this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
   }
 
   async loadTranslations(lang) {
+    // 如果已经加载过了，直接返回
     if (this.translations[lang]) {
       return;
     }
 
-    try {
-      console.log(`Loading translations for: ${lang}`);
-      const response = await fetch(`/translations/${lang}.json`);
-      if (!response.ok) {
-        throw new Error(`Failed to load translations for ${lang}`);
-      }
-      this.translations[lang] = await response.json();
-      console.log(`Successfully loaded translations for ${lang}`, Object.keys(this.translations[lang]));
-    } catch (error) {
-      console.error('Failed to load translations:', error);
-      // 如果加载失败，尝试加载回退语言
-      if (lang !== this.fallbackLang) {
-        await this.loadTranslations(this.fallbackLang);
-      }
+    // 如果正在加载中，返回现有的Promise
+    if (this._loadingPromises.has(lang)) {
+      return this._loadingPromises.get(lang);
     }
+
+    // 创建加载Promise并缓存
+    const loadingPromise = (async () => {
+      try {
+        console.log(`Loading translations for: ${lang}`);
+        const response = await fetch(`/translations/${lang}.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to load translations for ${lang}`);
+        }
+        this.translations[lang] = await response.json();
+        console.log(`Successfully loaded translations for ${lang}`, Object.keys(this.translations[lang]));
+      } catch (error) {
+        console.error('Failed to load translations:', error);
+        // 如果加载失败，尝试加载回退语言
+        if (lang !== this.fallbackLang) {
+          await this.loadTranslations(this.fallbackLang);
+        }
+        throw error; // 重新抛出错误以便调用方处理
+      } finally {
+        // 无论成功或失败，都从缓存中移除Promise
+        this._loadingPromises.delete(lang);
+      }
+    })();
+
+    // 缓存Promise
+    this._loadingPromises.set(lang, loadingPromise);
+
+    // 返回Promise
+    return loadingPromise;
   }
 
   t(key, params = {}) {

@@ -3,7 +3,7 @@
  * @module ui/board-renderer
  */
 
-import { emit } from '../utils/event-bus.js';
+import { emit, getGlobalState } from '../utils/event-bus.js';
 import { detectConflicts } from '../core/validator.js';
 import { GRID_SIZE } from '../config/constants.js';
 
@@ -18,12 +18,6 @@ let boardElement = null;
  * @type {boolean[][]|null}
  */
 let givenMask = null;
-
-/**
- * 是否正在重置棋盘（防止在重置时触发自动完成）
- * @type {boolean}
- */
-let isResetting = false;
 
 /**
  * 初始化棋盘渲染器
@@ -48,9 +42,7 @@ export function renderBoard(board, given) {
     initBoardRenderer();
   }
 
-  // 设置重置标志，防止自动完成检测
-  isResetting = true;
-
+  // 重置标志由事件总线管理，这里不需要设置
   givenMask = given;
   boardElement.innerHTML = '';
 
@@ -73,6 +65,7 @@ export function renderBoard(board, given) {
         cell.textContent = board[r][c] || '';
         cell.dataset.r = r;
         cell.dataset.c = c;
+        cell.dataset.value = board[r][c] || ''; // 添加值到dataset
       } else {
         // 可编辑格子
         const input = document.createElement('input');
@@ -96,11 +89,6 @@ export function renderBoard(board, given) {
   }
 
   updateConflicts();
-
-  // 重置完成后清除标志
-  setTimeout(() => {
-    isResetting = false;
-  }, 100);
 }
 
 /**
@@ -109,6 +97,7 @@ export function renderBoard(board, given) {
  */
 function onCellInput(e) {
   const input = e.target;
+  const isResetting = getGlobalState('isResetting');
   console.log('onCellInput called, isResetting:', isResetting);
 
   // 如果正在重置，不处理输入事件
@@ -240,12 +229,13 @@ export function readUserBoard() {
     board[r][c] = (!isNaN(v) && v >= 1 && v <= 9) ? v : 0;
   });
 
-  // 读取预填格子（使用 data-r 和 data-c）
+  // 读取预填格子（优先使用 dataset.value）
   const prefilledCells = boardElement.querySelectorAll('.cell.prefilled');
   prefilledCells.forEach(cell => {
     const r = +cell.dataset.r;
     const c = +cell.dataset.c;
-    const value = parseInt(cell.textContent);
+    // 优先从 dataset.value 读取，如果不存在则从 textContent 读取
+    const value = parseInt(cell.dataset.value || cell.textContent);
     if (!isNaN(value) && value >= 1 && value <= 9) {
       board[r][c] = value;
     }
@@ -258,6 +248,7 @@ export function readUserBoard() {
  * 检查是否自动完成
  */
 function checkAutoComplete() {
+  const isResetting = getGlobalState('isResetting');
   console.log('checkAutoComplete called, isResetting:', isResetting);
   // 如果正在重置，不进行检查
   if (isResetting) {

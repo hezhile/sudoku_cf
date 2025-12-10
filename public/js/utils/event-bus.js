@@ -10,6 +10,14 @@
 const events = {};
 
 /**
+ * 全局状态存储
+ * @type {Object.<string, any>}
+ */
+const globalState = {
+  isResetting: false
+};
+
+/**
  * 订阅事件
  * @param {string} event - 事件名称
  * @param {Function} handler - 事件处理函数
@@ -112,6 +120,28 @@ export function getEventList() {
  */
 export function getHandlerCount(event) {
   return events[event] ? events[event].length : 0;
+}
+
+/**
+ * 设置全局状态
+ * @param {string} key - 状态键
+ * @param {any} value - 状态值
+ * @example
+ * setGlobalState('isResetting', true);
+ */
+export function setGlobalState(key, value) {
+  globalState[key] = value;
+}
+
+/**
+ * 获取全局状态
+ * @param {string} key - 状态键
+ * @returns {any} 状态值
+ * @example
+ * const isResetting = getGlobalState('isResetting');
+ */
+export function getGlobalState(key) {
+  return globalState[key];
 }
 
 /**

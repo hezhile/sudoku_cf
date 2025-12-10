@@ -22,14 +22,19 @@ import { initSyncModule, uploadRecordOnComplete } from './storage/supabase-sync.
 import { initAuth } from './auth/auth-handler.js';
 
 // 工具模块
-import { on, emit } from './utils/event-bus.js';
+import { on, emit, setGlobalState, getGlobalState } from './utils/event-bus.js';
 import { formatTime } from './utils/helpers.js';
+import { addListener, removeListener, createListenerGroup } from './utils/listener-manager.js';
 
 // 配置
 import { DIFFICULTY_HOLES, DIFFICULTY_LABELS } from './config/constants.js';
 
 // 获取全局i18n实例（将在初始化后设置）
 let i18n = null;
+
+// 监听器组
+const uiListeners = createListenerGroup('uiListeners');
+const languageListeners = createListenerGroup('languageListeners');
 
 /**
  * 游戏状态
@@ -157,12 +162,12 @@ function handleReset() {
   }
 
   // 防止重复重置
-  if (window._isResetting) {
+  if (getGlobalState('isResetting')) {
     console.log('Reset already in progress, ignoring');
     return;
   }
 
-  window._isResetting = true;
+  setGlobalState('isResetting', true);
   console.log('Resetting game...');
   stopTimer();
   console.log('Timer stopped');
@@ -177,7 +182,7 @@ function handleReset() {
   setTimeout(() => {
     console.log('Showing reset toast');
     showToast(i18n.t('status.gameReset'), 'info');
-    window._isResetting = false;
+    setGlobalState('isResetting', false);
   }, 100);
 
   console.log('Reset complete');
@@ -204,36 +209,26 @@ async function initializeI18n() {
     if (languageSelector) {
       languageSelector.value = globalI18n.currentLang;
 
-      // 移除旧的事件监听器（如果存在）
-      if (languageSelector._i18nChangeHandler) {
-        languageSelector.removeEventListener('change', languageSelector._i18nChangeHandler);
-      }
+      // 清理旧的监听器
+      languageListeners.clear();
 
-      // 创建新的事件处理函数并保存引用
-      languageSelector._i18nChangeHandler = async (e) => {
+      // 添加新的语言切换监听器
+      languageListeners.add(languageSelector, 'change', async (e) => {
         const newLang = e.target.value;
         console.log('Language changed to:', newLang);
         await globalI18n.setLanguage(newLang);
-      };
-
-      // 监听语言切换事件
-      languageSelector.addEventListener('change', languageSelector._i18nChangeHandler);
+      });
     }
 
-    // 移除旧的语言变更事件监听器（如果存在）
-    if (window._i18nLanguageChangedHandler) {
-      window.removeEventListener('languageChanged', window._i18nLanguageChangedHandler);
-    }
+    // 清理旧的语言变更事件监听器
+    uiListeners.clear();
 
-    // 创建新的事件处理函数并保存引用
-    window._i18nLanguageChangedHandler = (e) => {
+    // 添加语言变更事件监听器
+    uiListeners.add(window, 'languageChanged', (e) => {
       console.log('Language changed event received:', e.detail);
       // 重新渲染记录（包含翻译的文本）
       renderRecords();
-    };
-
-    // 监听语言变更事件，更新需要动态翻译的内容
-    window.addEventListener('languageChanged', window._i18nLanguageChangedHandler);
+    });
   } catch (error) {
     console.error('Failed to initialize i18n:', error);
   }
@@ -307,6 +302,10 @@ async function handleBoardComplete() {
  * 处理清除记录
  */
 function handleClearRecords() {
+  // 清理所有UI监听器
+  uiListeners.clear();
+  languageListeners.clear();
+
   renderRecords();
   showToast(i18n.t('status.recordsCleared'), 'info');
 }
