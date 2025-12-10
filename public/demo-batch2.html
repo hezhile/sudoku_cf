@@ -231,12 +231,12 @@ function renderRecords() {
     const stat = stats[diff];
     const bestStr = stat.best ? formatTime(stat.best) : '—';
     const lastStr = stat.lastTime ? formatTime(stat.lastTime) : '—';
-    const label = DIFFICULTY_LABELS[diff];
+    const label = window.i18n.t(`difficulty.${diff}`);
 
     return `
       <div class="record-row">
-        <div>${label} <span class="small">（最近：${lastStr}）</span></div>
-        <div>最好：${bestStr}</div>
+        <div>${label} <span class="small">${window.i18n.t('records.recent', { time: lastStr })}</span></div>
+        <div>${window.i18n.t('records.best', { time: bestStr })}</div>
       </div>
     `;
   }).join('');

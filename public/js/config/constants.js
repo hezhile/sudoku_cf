@@ -14,16 +14,6 @@ export const DIFFICULTY_HOLES = {
   expert: 58     // 专家：58个空格
 };
 
-/**
- * 难度标签（中文）
- * @type {Object.<string, string>}
- */
-export const DIFFICULTY_LABELS = {
-  easy: '简单',
-  medium: '中等',
-  hard: '困难',
-  expert: '专家'
-};
 
 /**
  * localStorage 存储键

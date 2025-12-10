@@ -27,7 +27,7 @@ import { formatTime } from './utils/helpers.js';
 import { addListener, removeListener, createListenerGroup } from './utils/listener-manager.js';
 
 // 配置
-import { DIFFICULTY_HOLES, DIFFICULTY_LABELS } from './config/constants.js';
+import { DIFFICULTY_HOLES } from './config/constants.js';
 
 // 获取全局i18n实例（将在初始化后设置）
 let i18n = null;
@@ -323,12 +323,12 @@ function renderRecords() {
     const stat = stats[diff];
     const bestStr = stat.best ? formatTime(stat.best) : '—';
     const lastStr = stat.lastTime ? formatTime(stat.lastTime) : '—';
-    const label = DIFFICULTY_LABELS[diff];
+    const label = window.i18n.t(`difficulty.${diff}`);
 
     return `
       <div class="record-row">
-        <div>${label} <span class="small">（最近：${lastStr}）</span></div>
-        <div>最好：${bestStr}</div>
+        <div>${label} <span class="small">${window.i18n.t('records.recent', { time: lastStr })}</span></div>
+        <div>${window.i18n.t('records.best', { time: bestStr })}</div>
       </div>
     `;
   }).join('');
