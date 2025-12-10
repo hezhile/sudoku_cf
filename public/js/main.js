@@ -68,7 +68,18 @@ async function init() {
 
     // 渲染初始状态
     renderEmptyBoard();
-    renderRecords();
+
+    // 确保翻译已加载后再渲染记录
+    if (globalI18n.translations[globalI18n.currentLang]) {
+      renderRecords();
+    } else {
+      console.log('Translations not ready, waiting...');
+      const onLoaded = () => {
+        renderRecords();
+        window.removeEventListener('translationsLoaded', onLoaded);
+      };
+      window.addEventListener('translationsLoaded', onLoaded);
+    }
   } catch (error) {
     console.error('初始化失败:', error);
     if (i18n) {
@@ -197,8 +208,10 @@ async function initializeI18n() {
     const globalI18n = window.i18n;
     console.log('Initializing i18n, current language:', globalI18n.currentLang);
 
-    // 加载当前语言的翻译
-    await globalI18n.loadTranslations(globalI18n.currentLang);
+    // 确保翻译已加载（可能已经在i18n.js中加载了）
+    if (!globalI18n.translations[globalI18n.currentLang]) {
+      await globalI18n.loadTranslations(globalI18n.currentLang);
+    }
     console.log('Loaded translations:', Object.keys(globalI18n.translations));
 
     // 更新DOM中的翻译（包括难度选择器）
@@ -318,6 +331,12 @@ function renderRecords() {
   const recordsList = document.getElementById('recordsList');
 
   if (!recordsList) return;
+
+  // 确保i18n和翻译已加载
+  if (!window.i18n || !window.i18n.translations || !window.i18n.translations[window.i18n.currentLang]) {
+    console.warn('Translations not loaded yet, skipping renderRecords');
+    return;
+  }
 
   const html = ['easy', 'medium', 'hard', 'expert'].map(diff => {
     const stat = stats[diff];

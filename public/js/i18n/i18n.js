@@ -27,6 +27,9 @@ class I18n {
         }
         this.translations[lang] = await response.json();
         console.log(`Successfully loaded translations for ${lang}`, Object.keys(this.translations[lang]));
+
+        // 触发翻译加载完成事件
+        window.dispatchEvent(new CustomEvent('translationsLoaded', { detail: { language: lang } }));
       } catch (error) {
         console.error('Failed to load translations:', error);
         // 如果加载失败，尝试加载回退语言
