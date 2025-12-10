@@ -188,19 +188,21 @@ function handleReset() {
  */
 async function initializeI18n() {
   try {
-    console.log('Initializing i18n, current language:', i18n.currentLang);
+    // 使用全局的 i18n 实例
+    const globalI18n = window.i18n;
+    console.log('Initializing i18n, current language:', globalI18n.currentLang);
 
     // 加载当前语言的翻译
-    await i18n.loadTranslations(i18n.currentLang);
-    console.log('Loaded translations:', Object.keys(i18n.translations));
+    await globalI18n.loadTranslations(globalI18n.currentLang);
+    console.log('Loaded translations:', Object.keys(globalI18n.translations));
 
     // 更新DOM中的翻译
-    i18n.updateDOM();
+    globalI18n.updateDOM();
 
     // 设置语言选择器的当前值
     const languageSelector = document.getElementById('language-selector');
     if (languageSelector) {
-      languageSelector.value = i18n.currentLang;
+      languageSelector.value = globalI18n.currentLang;
 
       // 移除旧的事件监听器（如果存在）
       if (languageSelector._i18nChangeHandler) {
@@ -211,7 +213,7 @@ async function initializeI18n() {
       languageSelector._i18nChangeHandler = async (e) => {
         const newLang = e.target.value;
         console.log('Language changed to:', newLang);
-        await i18n.setLanguage(newLang);
+        await globalI18n.setLanguage(newLang);
       };
 
       // 监听语言切换事件
