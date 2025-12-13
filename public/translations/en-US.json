@@ -17,10 +17,10 @@
   "clearRecords": "Clear Records",
   "changelog": "Changelog",
   "welcome": "Welcome, {{email}}",
-  "puzzleGenerated": "difficulty puzzle generated",
+  "puzzleGenerated": "Puzzle generated",
   "gameComplete": "Congratulations! Completed in {{time}}",
-  "confirmReset": "Are you sure you want to reset the game?",
-  "confirmClear": "Are you sure you want to clear all local records?",
+  "confirmReset": "Reset the game?",
+  "confirmClear": "Clear all local records?",
   "errors": {
     "authFailed": "Authentication system failed to load",
     "invalidEmail": "Invalid email format",
@@ -70,7 +70,7 @@
     }
   },
   "records": {
-    "recent": "(Latest: {{time}})",
+    "recent": "Latest: {{time}}",
     "best": "Best: {{time}}"
   },
   "status": {

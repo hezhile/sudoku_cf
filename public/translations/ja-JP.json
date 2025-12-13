@@ -17,7 +17,7 @@
   "clearRecords": "記録をクリア",
   "changelog": "更新履歴",
   "welcome": "ようこそ、{{email}}",
-  "puzzleGenerated": "難易度のパズルが生成されました",
+  "puzzleGenerated": "パズルが生成されました",
   "gameComplete": "おめでとうございます！{{time}}でクリアしました",
   "confirmReset": "ゲームをリセットしてもよろしいですか？",
   "confirmClear": "すべてのローカル記録をクリアしてもよろしいですか？",

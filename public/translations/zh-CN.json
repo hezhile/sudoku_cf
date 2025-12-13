@@ -1,5 +1,5 @@
 {
-  "title": "数独 Sudoku - Free Sudoku Puzzles Online",
+  "title": "数独 - 免费在线数独游戏",
   "gameTitle": "数独",
   "emailPlaceholder": "输入邮箱接收登录链接",
   "login": "登录",
@@ -17,7 +17,7 @@
   "clearRecords": "清除记录",
   "changelog": "更新日志",
   "welcome": "欢迎，{{email}}",
-  "puzzleGenerated": "难度题目已生成",
+  "puzzleGenerated": "题目已生成",
   "gameComplete": "恭喜完成！用时：{{time}}",
   "confirmReset": "确定要重置游戏吗？",
   "confirmClear": "确定清除所有本地记录？",
@@ -70,7 +70,7 @@
     }
   },
   "records": {
-    "recent": "（最近：{{time}}）",
+    "recent": "最近：{{time}}",
     "best": "最好：{{time}}"
   },
   "status": {
