@@ -403,3 +403,9 @@ input.cell-input {
     width: 100%;
   }
 }
+
+/* 语言选择器特定样式 */
+#language-selector {
+  width: 100px; /* 覆盖 .form-control 的 200px 默认宽度 */
+  min-width: 100px;
+}
