@@ -54,6 +54,9 @@ async function init() {
     // 设置全局i18n引用
     i18n = window.i18n;
 
+    // 确保翻译已加载后再继续初始化
+    await i18n.ensureTranslationsLoaded();
+
     // 初始化各个模块
     initBoardRenderer('#board');
     initTimer('#timer');
@@ -69,22 +72,16 @@ async function init() {
     // 渲染初始状态
     renderEmptyBoard();
 
-    // 确保翻译已加载后再渲染记录
-    if (globalI18n.translations[globalI18n.currentLang]) {
-      renderRecords();
-    } else {
-      console.log('Translations not ready, waiting...');
-      const onLoaded = () => {
-        renderRecords();
-        window.removeEventListener('translationsLoaded', onLoaded);
-      };
-      window.addEventListener('translationsLoaded', onLoaded);
-    }
+    // 现在可以安全地渲染记录，因为翻译已经加载完成
+    renderRecords();
   } catch (error) {
     console.error('初始化失败:', error);
     if (i18n) {
       showError(i18n.t('errors.authFailed'));
     }
+
+    // 即使翻译加载失败，也尝试渲染记录（会使用默认文本）
+    renderRecords();
   }
 }
 
@@ -331,22 +328,33 @@ function renderRecords() {
 
   if (!recordsList) return;
 
-  // 确保i18n和翻译已加载
-  if (!window.i18n || !window.i18n.translations || !window.i18n.translations[window.i18n.currentLang]) {
-    console.warn('Translations not loaded yet, skipping renderRecords');
-    return;
-  }
+  // 获取翻译，如果未加载则使用默认值
+  const getTranslation = (key, fallback) => {
+    if (window.i18n && window.i18n.translations && window.i18n.translations[window.i18n.currentLang]) {
+      return window.i18n.t(key);
+    }
+    // Fallback values for English
+    const fallbacks = {
+      'difficulty.easy': 'Easy',
+      'difficulty.medium': 'Medium',
+      'difficulty.hard': 'Hard',
+      'difficulty.expert': 'Expert',
+      'records.recent': 'Recent: {{time}}',
+      'records.best': 'Best: {{time}}'
+    };
+    return fallbacks[key] || fallback || key;
+  };
 
   const html = ['easy', 'medium', 'hard', 'expert'].map(diff => {
     const stat = stats[diff];
     const bestStr = stat.best ? formatTime(stat.best) : '—';
     const lastStr = stat.lastTime ? formatTime(stat.lastTime) : '—';
-    const label = window.i18n.t(`difficulty.${diff}`);
+    const label = getTranslation(`difficulty.${diff}`);
 
     return `
       <div class="record-row">
-        <div>${label} <span class="small">${window.i18n.t('records.recent', { time: lastStr })}</span></div>
-        <div>${window.i18n.t('records.best', { time: bestStr })}</div>
+        <div>${label} <span class="small">${getTranslation('records.recent').replace('{{time}}', lastStr)}</span></div>
+        <div>${getTranslation('records.best').replace('{{time}}', bestStr)}</div>
       </div>
     `;
   }).join('');

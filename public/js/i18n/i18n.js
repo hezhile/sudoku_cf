@@ -57,6 +57,21 @@ class I18n {
     return loadingPromise;
   }
 
+  async ensureTranslationsLoaded(lang = this.currentLang) {
+    // 如果已经加载了，直接返回
+    if (this.translations[lang]) {
+      return Promise.resolve();
+    }
+
+    // 如果正在加载中，等待加载完成
+    if (this._loadingPromises.has(lang)) {
+      return this._loadingPromises.get(lang);
+    }
+
+    // 否则开始加载
+    return this.loadTranslations(lang);
+  }
+
   t(key, params = {}) {
     let translation;
 
