@@ -48,11 +48,11 @@ let givenMask = null;     // 9x9 布尔，true 表示预填（不可编辑）
  */
 async function init() {
   try {
+    // 设置全局i18n引用（在初始化前就设置）
+    i18n = window.i18n;
+
     // 初始化多语言系统（优先初始化）
     await initializeI18n();
-
-    // 设置全局i18n引用
-    i18n = window.i18n;
 
     // 确保翻译已加载后再继续初始化
     await i18n.ensureTranslationsLoaded();
@@ -203,9 +203,15 @@ async function initializeI18n() {
   try {
     // 使用全局的 i18n 实例
     const globalI18n = window.i18n;
+
+    // 等待语言检测和初始化完成
+    if (globalI18n._initializationPromise) {
+      await globalI18n._initializationPromise;
+    }
+
     console.log('Initializing i18n, current language:', globalI18n.currentLang);
 
-    // 确保翻译已加载（可能已经在i18n.js中加载了）
+    // 确保翻译已加载
     if (!globalI18n.translations[globalI18n.currentLang]) {
       await globalI18n.loadTranslations(globalI18n.currentLang);
     }
@@ -215,20 +221,7 @@ async function initializeI18n() {
     globalI18n.updateDOM();
 
     // 设置语言选择器的当前值
-    const languageSelector = document.getElementById('language-selector');
-    if (languageSelector) {
-      languageSelector.value = globalI18n.currentLang;
-
-      // 清理旧的监听器
-      languageListeners.clear();
-
-      // 添加新的语言切换监听器
-      languageListeners.add(languageSelector, 'change', async (e) => {
-        const newLang = e.target.value;
-        console.log('Language changed to:', newLang);
-        await globalI18n.setLanguage(newLang);
-      });
-    }
+    updateLanguageSelector();
 
     // 清理旧的语言变更事件监听器
     uiListeners.clear();
@@ -237,9 +230,40 @@ async function initializeI18n() {
     uiListeners.add(window, 'languageChanged', () => {
       // 重新渲染记录（包含翻译的文本）
       renderRecords();
+      updateLanguageSelector();
     });
   } catch (error) {
     console.error('Failed to initialize i18n:', error);
+  }
+}
+
+/**
+ * 更新语言选择器
+ */
+function updateLanguageSelector() {
+  const globalI18n = window.i18n;
+  const languageSelector = document.getElementById('language-selector');
+
+  if (languageSelector) {
+    languageSelector.value = globalI18n.currentLang;
+
+    // 标记是否为自动检测
+    const isAutoDetected = !globalI18n.getSavedLanguage();
+    if (isAutoDetected) {
+      languageSelector.title = `自动检测: ${globalI18n.currentLang}`;
+    } else {
+      languageSelector.title = '';
+    }
+
+    // 清理旧的监听器
+    languageListeners.clear();
+
+    // 添加新的语言切换监听器
+    languageListeners.add(languageSelector, 'change', async (e) => {
+      const newLang = e.target.value;
+      console.log('Language changed to:', newLang);
+      await globalI18n.setLanguage(newLang);
+    });
   }
 }
 

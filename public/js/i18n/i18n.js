@@ -1,19 +1,114 @@
 class I18n {
   constructor() {
-    // 安全地获取语言设置，支持隐私模式
-    try {
-      // Try to get saved language, default to English instead of Chinese
-      this.currentLang = localStorage.getItem('language') || 'en-US';
-    } catch (error) {
-      console.warn('localStorage is not available, using default language:', error);
-      this.currentLang = 'en-US';
-    }
     this.translations = {};
     this.fallbackLang = 'en-US';
     this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
+    this._initializationPromise = this.initializeLanguage();
+  }
 
+  async initializeLanguage() {
+    console.log('Initializing language detection...');
+
+    // 1. 检查localStorage中的用户偏好
+    const savedLang = this.getSavedLanguage();
+    if (savedLang) {
+      console.log('Using saved language:', savedLang);
+      this.currentLang = savedLang;
+      this.completeInitialization();
+      return;
+    }
+
+    // 2. IP地理位置检测
+    console.log('Detecting language from location...');
+    const detectedLang = await this.detectLanguageFromLocation();
+    if (detectedLang && detectedLang !== 'en-US') {
+      console.log('Detected language from location:', detectedLang);
+      this.currentLang = detectedLang;
+      this.completeInitialization();
+      return;
+    }
+
+    // 3. 浏览器语言检测
+    console.log('Detecting language from browser...');
+    const browserLang = this.getBrowserLanguage();
+    if (browserLang) {
+      console.log('Detected language from browser:', browserLang);
+      this.currentLang = browserLang;
+      this.completeInitialization();
+      return;
+    }
+
+    // 4. 默认英语
+    console.log('Using default language: en-US');
+    this.currentLang = 'en-US';
+    this.completeInitialization();
+  }
+
+  completeInitialization() {
     // Set HTML lang attribute
     document.documentElement.lang = this.currentLang;
+
+    // Trigger initialization complete event
+    window.dispatchEvent(new CustomEvent('i18nInitialized', {
+      detail: { language: this.currentLang }
+    }));
+  }
+
+  getSavedLanguage() {
+    try {
+      return localStorage.getItem('language');
+    } catch (error) {
+      console.warn('localStorage is not available:', error);
+      return null;
+    }
+  }
+
+  async detectLanguageFromLocation() {
+    try {
+      const response = await fetch('/cdn-cgi/trace');
+      if (response.ok) {
+        const text = await response.text();
+        const match = text.match(/loc=([A-Z]{2})/);
+        if (match) {
+          const countryCode = match[1];
+          console.log('Detected country code:', countryCode);
+          return this.mapCountryToLanguage(countryCode);
+        }
+      }
+    } catch (error) {
+      console.warn('Location detection failed:', error);
+    }
+    return null;
+  }
+
+  mapCountryToLanguage(countryCode) {
+    const countryMap = {
+      'zh-CN': ['CN', 'SG', 'MY'],
+      'ja-JP': ['JP']
+    };
+
+    if (countryMap['zh-CN'].includes(countryCode)) {
+      return 'zh-CN';
+    }
+    if (countryMap['ja-JP'].includes(countryCode)) {
+      return 'ja-JP';
+    }
+    return 'en-US';
+  }
+
+  getBrowserLanguage() {
+    const browserLangs = [navigator.language, ...(navigator.languages || [])];
+    const availableLangs = ['zh-CN', 'ja-JP', 'en-US'];
+
+    for (const lang of browserLangs) {
+      // 精确匹配
+      if (availableLangs.includes(lang)) return lang;
+      // 语言代码匹配（如zh匹配zh-CN）
+      const langCode = lang.split('-')[0];
+      const matched = availableLangs.find(l => l.startsWith(langCode));
+      if (matched) return matched;
+    }
+    return null;
   }
 
   async loadTranslations(lang) {
@@ -354,9 +449,13 @@ class I18n {
 // 创建全局实例
 window.i18n = new I18n();
 
-// 自动初始化并更新DOM
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', async () => {
+// 等待语言初始化完成后再加载翻译和更新DOM
+const initializeAfterLanguageDetection = async () => {
+  try {
+    // 等待语言检测完成
+    await window.i18n._initializationPromise;
+
+    // 加载对应语言的翻译
     await window.i18n.loadTranslations(window.i18n.currentLang);
     window.i18n.updateDOM();
 
@@ -365,16 +464,15 @@ if (document.readyState === 'loading') {
     window.i18n.updateHreflangTags();
     window.i18n.updateCanonicalURL();
     window.i18n.injectStructuredData();
-  });
+  } catch (error) {
+    console.error('Failed to initialize i18n:', error);
+  }
+};
+
+// 自动初始化并更新DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeAfterLanguageDetection);
 } else {
   // 如果DOM已经加载完成，立即更新
-  window.i18n.loadTranslations(window.i18n.currentLang).then(() => {
-    window.i18n.updateDOM();
-
-    // Initialize SEO metadata
-    window.i18n.updateSEOMetadata();
-    window.i18n.updateHreflangTags();
-    window.i18n.updateCanonicalURL();
-    window.i18n.injectStructuredData();
-  });
+  initializeAfterLanguageDetection();
 }
