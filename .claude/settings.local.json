@@ -13,7 +13,13 @@
       "Bash(python3:*)",
       "Bash(git pull:*)",
       "Bash(git rebase:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(git diff:*)",
+      "Bash(git push:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)"
     ]
   }
 }
