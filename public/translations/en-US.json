@@ -79,5 +79,9 @@
     "notLoggedIn": "Not logged in",
     "recordsCleared": "Records cleared",
     "gameReset": "Game has been reset"
+  },
+  "meta": {
+    "description": "Free online Sudoku puzzles with multiple difficulty levels. Play Sudoku for free, challenge yourself with easy, medium, hard, and expert levels.",
+    "keywords": "Sudoku, free Sudoku, online Sudoku, Sudoku puzzles, Sudoku game, brain games, puzzle games, number puzzles, logic puzzles, free games, online games, easy Sudoku, medium Sudoku, hard Sudoku, expert Sudoku, daily Sudoku, Sudoku challenge"
   }
 }

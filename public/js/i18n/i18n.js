@@ -11,6 +11,9 @@ class I18n {
     this.translations = {};
     this.fallbackLang = 'en-US';
     this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
+
+    // Set HTML lang attribute
+    document.documentElement.lang = this.currentLang;
   }
 
   async loadTranslations(lang) {
@@ -147,6 +150,12 @@ class I18n {
 
     // 触发翻译加载完成事件
     window.dispatchEvent(new CustomEvent('translationsLoaded', { detail: { language: lang } }));
+
+    // Update SEO metadata for multilingual support
+    this.updateSEOMetadata();
+    this.updateHreflangTags();
+    this.updateCanonicalURL();
+    this.injectStructuredData();
   }
 
   updateDOM() {
@@ -221,6 +230,125 @@ class I18n {
       { code: 'ja-JP', name: '日本語' }
     ];
   }
+
+  /**
+   * Update SEO metadata including title, meta description, and Open Graph tags
+   */
+  updateSEOMetadata() {
+    // Update page title
+    const title = this.t('gameTitle');
+    document.title = title;
+
+    // Update meta description
+    this.updateMetaTag('description', this.t('meta.description'));
+
+    // Update Open Graph tags
+    this.updateMetaTag('og:title', title, 'property');
+    this.updateMetaTag('og:description', this.t('meta.description'), 'property');
+    this.updateMetaTag('og:locale', this.currentLang.replace('-', '_'), 'property');
+    this.updateMetaTag('og:type', 'website', 'property');
+    this.updateMetaTag('og:url', window.location.href, 'property');
+
+    // Update Twitter Card tags
+    this.updateMetaTag('twitter:card', 'summary_large_image');
+    this.updateMetaTag('twitter:title', title);
+    this.updateMetaTag('twitter:description', this.t('meta.description'));
+  }
+
+  /**
+   * Update hreflang tags for SEO
+   */
+  updateHreflangTags() {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const languages = this.getAvailableLanguages();
+
+    // Remove existing hreflang tags
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => {
+      tag.remove();
+    });
+
+    // Add hreflang tags for all available languages
+    languages.forEach(lang => {
+      const link = document.createElement('link');
+      link.rel = 'alternate';
+      link.hreflang = lang.code;
+      link.href = `${baseUrl}#${lang.code}`;
+      document.head.appendChild(link);
+    });
+
+    // Add x-default hreflang
+    const xDefaultLink = document.createElement('link');
+    xDefaultLink.rel = 'alternate';
+    xDefaultLink.hreflang = 'x-default';
+    xDefaultLink.href = `${baseUrl}#en-US`;
+    document.head.appendChild(xDefaultLink);
+  }
+
+  /**
+   * Update canonical URL
+   */
+  updateCanonicalURL() {
+    const baseUrl = window.location.origin + window.location.pathname;
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+
+    canonicalTag.href = `${baseUrl}#${this.currentLang}`;
+  }
+
+  /**
+   * Inject JSON-LD structured data
+   */
+  injectStructuredData() {
+    // Remove existing structured data
+    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    // Create structured data
+    const structuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: this.t('gameTitle'),
+      description: this.t('meta.description'),
+      url: window.location.href,
+      inLanguage: this.currentLang,
+      isAccessibleForFree: true,
+      applicationCategory: 'Game',
+      operatingSystem: 'Any',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD'
+      }
+    };
+
+    // Create and inject script tag
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(structuredData, null, 2);
+    document.head.appendChild(script);
+  }
+
+  /**
+   * Helper method to update or create a meta tag
+   */
+  updateMetaTag(name, content, attribute = 'name') {
+    let metaTag = document.querySelector(`meta[${attribute}="${name}"]`);
+
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.setAttribute(attribute, name);
+      document.head.appendChild(metaTag);
+    }
+
+    metaTag.content = content;
+  }
 }
 
 // 创建全局实例
@@ -231,10 +359,22 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', async () => {
     await window.i18n.loadTranslations(window.i18n.currentLang);
     window.i18n.updateDOM();
+
+    // Initialize SEO metadata
+    window.i18n.updateSEOMetadata();
+    window.i18n.updateHreflangTags();
+    window.i18n.updateCanonicalURL();
+    window.i18n.injectStructuredData();
   });
 } else {
   // 如果DOM已经加载完成，立即更新
   window.i18n.loadTranslations(window.i18n.currentLang).then(() => {
     window.i18n.updateDOM();
+
+    // Initialize SEO metadata
+    window.i18n.updateSEOMetadata();
+    window.i18n.updateHreflangTags();
+    window.i18n.updateCanonicalURL();
+    window.i18n.injectStructuredData();
   });
 }
