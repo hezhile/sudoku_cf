@@ -14,7 +14,8 @@ const events = {};
  * @type {Object.<string, any>}
  */
 const globalState = {
-  isResetting: false
+  isResetting: false,
+  isPaused: false
 };
 
 /**
@@ -155,6 +156,10 @@ export const EventTypes = {
   GAME_RESET: 'game:reset',
   GAME_STARTED: 'game:started',
   GAME_COMPLETED: 'game:completed',
+  GAME_PAUSED: 'game:paused',
+  GAME_RESUMED: 'game:resumed',
+  GAME_STATE_SAVED: 'game:state:saved',
+  GAME_STATE_RESTORED: 'game:state:restored',
 
   // 棋盘事件
   BOARD_CHANGED: 'board:changed',
@@ -165,6 +170,7 @@ export const EventTypes = {
   // 计时器事件
   TIMER_STARTED: 'timer:started',
   TIMER_STOPPED: 'timer:stopped',
+  TIMER_PAUSED: 'timer:paused',
   TIMER_TICK: 'timer:tick',
 
   // 存储事件

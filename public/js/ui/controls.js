@@ -8,6 +8,9 @@ import { emit } from '../utils/event-bus.js';
 // 获取全局i18n实例
 const getI18n = () => window.i18n;
 
+// 暂停按钮引用（保持启用）
+let pauseBtnRef = null;
+
 /**
  * 控件元素引用
  */
@@ -135,6 +138,27 @@ export function disableControls() {
  * enableControls();
  */
 export function enableControls() {
+  if (newBtn) newBtn.disabled = false;
+  if (resetBtn) resetBtn.disabled = false;
+  if (difficultyEl) difficultyEl.disabled = false;
+  if (clearRecordsBtn) clearRecordsBtn.disabled = false;
+}
+
+/**
+ * 禁用所有控件（用于暂停状态）
+ * 暂停按钮保持启用
+ */
+export function disableControlsForPause() {
+  if (newBtn) newBtn.disabled = true;
+  if (resetBtn) resetBtn.disabled = true;
+  if (difficultyEl) difficultyEl.disabled = true;
+  if (clearRecordsBtn) clearRecordsBtn.disabled = true;
+}
+
+/**
+ * 启用所有控件（从暂停状态恢复）
+ */
+export function enableControlsFromPause() {
   if (newBtn) newBtn.disabled = false;
   if (resetBtn) resetBtn.disabled = false;
   if (difficultyEl) difficultyEl.disabled = false;

@@ -3,7 +3,7 @@
  * @module ui/timer
  */
 
-import { emit } from '../utils/event-bus.js';
+import { emit, getGlobalState } from '../utils/event-bus.js';
 import { formatTime } from '../utils/helpers.js';
 import { TIMER_UPDATE_INTERVAL } from '../config/constants.js';
 
@@ -22,6 +22,12 @@ let pausedTime = 0;
 let timerElement = null;
 
 /**
+ * 暂停按钮元素
+ * @type {HTMLElement|null}
+ */
+let pauseButton = null;
+
+/**
  * 初始化计时器
  * @param {string} selector - 计时器元素选择器
  */
@@ -29,6 +35,51 @@ export function initTimer(selector = '#timer') {
   timerElement = document.querySelector(selector);
   if (!timerElement) {
     console.warn(`Timer element not found: ${selector}`);
+  }
+
+  // 创建暂停按钮
+  createPauseButton();
+}
+
+/**
+ * 创建暂停按钮
+ */
+function createPauseButton() {
+  // 如果已经创建过，直接返回
+  if (pauseButton) return;
+
+  pauseButton = document.createElement('button');
+  pauseButton.className = 'pause-btn';
+  pauseButton.innerHTML = '⏸️';
+  pauseButton.setAttribute('aria-label', '暂停游戏');
+  pauseButton.setAttribute('type', 'button');
+
+  // 绑定点击事件
+  pauseButton.addEventListener('click', handlePauseToggle);
+
+  // 添加到计时器区域
+  const timerArea = document.getElementById('timerArea');
+  if (timerArea) {
+    // 设置为 flex 布局以并排显示
+    timerArea.style.display = 'flex';
+    timerArea.style.alignItems = 'center';
+    timerArea.style.justifyContent = 'center';
+    timerArea.style.gap = '10px';
+    timerArea.appendChild(pauseButton);
+  } else {
+    console.warn('Timer area not found for pause button');
+  }
+}
+
+/**
+ * 处理暂停按钮点击
+ */
+function handlePauseToggle() {
+  const isPaused = getGlobalState('isPaused');
+  if (isPaused) {
+    emit('game:resume');
+  } else {
+    emit('game:pause');
   }
 }
 
@@ -187,4 +238,49 @@ export function setTimerDisplay(text) {
  */
 export function getFormattedTime() {
   return formatTime(getElapsedTime());
+}
+
+/**
+ * 更新暂停按钮的外观
+ * @param {boolean} isPaused - 是否暂停
+ * @param {Function} t - i18n 翻译函数（可选）
+ */
+export function updatePauseButton(isPaused, t) {
+  if (!pauseButton) return;
+
+  if (isPaused) {
+    pauseButton.innerHTML = '▶️';
+    pauseButton.setAttribute('aria-label', t ? t('pause.resume') : '继续游戏');
+  } else {
+    pauseButton.innerHTML = '⏸️';
+    pauseButton.setAttribute('aria-label', '暂停游戏');
+  }
+}
+
+/**
+ * 检查暂停按钮是否存在
+ * @returns {boolean} 暂停按钮是否已创建
+ */
+export function hasPauseButton() {
+  return pauseButton !== null;
+}
+
+/**
+ * 设置已用时间（用于恢复保存的游戏状态）
+ * @param {number} elapsed - 已用时间（毫秒）
+ */
+export function setElapsedTime(elapsed) {
+  pausedTime = elapsed;
+  if (timerElement) {
+    timerElement.textContent = formatTime(elapsed);
+  }
+}
+
+/**
+ * 启动计时器（从指定的已用时间开始）
+ * @param {number} elapsed - 起始已用时间（毫秒）
+ */
+export function startTimerWithElapsed(elapsed) {
+  pausedTime = elapsed;
+  startTimer();
 }

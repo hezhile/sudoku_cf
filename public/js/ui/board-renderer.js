@@ -98,11 +98,19 @@ export function renderBoard(board, given) {
 function onCellInput(e) {
   const input = e.target;
   const isResetting = getGlobalState('isResetting');
-  console.log('onCellInput called, isResetting:', isResetting);
+  const isPaused = getGlobalState('isPaused');
+  console.log('onCellInput called, isResetting:', isResetting, 'isPaused:', isPaused);
 
-  // 如果正在重置，不处理输入事件
+  // 如果正在重置或暂停，不处理输入事件
   if (isResetting) {
     console.log('Skipping input event due to reset');
+    return;
+  }
+
+  if (isPaused) {
+    console.log('Skipping input event due to pause');
+    // 清空输入，阻止用户在暂停时输入
+    input.value = '';
     return;
   }
 
@@ -249,10 +257,17 @@ export function readUserBoard() {
  */
 function checkAutoComplete() {
   const isResetting = getGlobalState('isResetting');
-  console.log('checkAutoComplete called, isResetting:', isResetting);
-  // 如果正在重置，不进行检查
+  const isPaused = getGlobalState('isPaused');
+  console.log('checkAutoComplete called, isResetting:', isResetting, 'isPaused:', isPaused);
+
+  // 如果正在重置或暂停，不进行检查
   if (isResetting) {
     console.log('Skipping auto-complete check due to reset');
+    return;
+  }
+
+  if (isPaused) {
+    console.log('Skipping auto-complete check due to pause');
     return;
   }
 

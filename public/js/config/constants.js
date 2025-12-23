@@ -22,6 +22,12 @@ export const DIFFICULTY_HOLES = {
 export const STORAGE_KEY = 'sudoku_records_v1';
 
 /**
+ * 游戏状态存储键
+ * @type {string}
+ */
+export const GAME_STATE_STORAGE_KEY = 'sudoku_game_state_v1';
+
+/**
  * Supabase 配置
  * @type {Object}
  */

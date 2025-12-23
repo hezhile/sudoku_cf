@@ -10,13 +10,15 @@ import { validateSolution } from './core/validator.js';
 
 // UI 模块
 import { initBoardRenderer, renderBoard, readUserBoard } from './ui/board-renderer.js';
-import { initTimer, startTimer, stopTimer, resetTimer, getElapsedTime, setTimerDisplay } from './ui/timer.js';
+import { initTimer, startTimer, startTimerWithElapsed, stopTimer, resetTimer, pauseTimer, resumeTimer, getElapsedTime, setTimerDisplay, updatePauseButton, setElapsedTime } from './ui/timer.js';
 import { showSuccess, showError, showWarning, showToast } from './ui/toast.js';
-import { initializeControls, getDifficulty, setLoading } from './ui/controls.js';
+import { initializeControls, getDifficulty, setLoading, disableControlsForPause, enableControlsFromPause, setDifficulty } from './ui/controls.js';
+import { initPauseOverlay, showPauseOverlay as showPauseOverlayDirect, hidePauseOverlay } from './ui/pause-overlay.js';
 
 // 存储模块
 import { saveRecord, loadRecords, getAllStats, clearRecords } from './storage/local-storage.js';
 import { initSyncModule, uploadRecordOnComplete } from './storage/supabase-sync.js';
+import { saveGameState, loadGameState, clearGameState } from './storage/game-state.js';
 
 // 认证模块
 import { initAuth } from './auth/auth-handler.js';
@@ -35,6 +37,10 @@ let i18n = null;
 // 监听器组
 const uiListeners = createListenerGroup('uiListeners');
 const languageListeners = createListenerGroup('languageListeners');
+
+// 自动保存节流
+let lastSaveTime = 0;
+const SAVE_INTERVAL = 5000; // 每5秒保存一次
 
 /**
  * 游戏状态
@@ -72,6 +78,9 @@ async function init() {
     // 渲染初始状态
     renderEmptyBoard();
 
+    // 检查并恢复游戏状态
+    await checkAndRestoreGameState();
+
     // 现在可以安全地渲染记录，因为翻译已经加载完成
     renderRecords();
   } catch (error) {
@@ -92,7 +101,12 @@ function registerEventHandlers() {
   // 游戏事件
   on('game:new', handleNewGame);
   on('game:reset', handleReset);
+  on('game:pause', handlePause);
+  on('game:resume', handleResume);
   on('board:complete', handleBoardComplete);
+
+  // 计时器事件（用于自动保存）
+  on('timer:tick', handleTimerTick);
 
   // 记录事件
   on('records:clear', handleClearRecords);
@@ -122,6 +136,10 @@ function renderEmptyBoard() {
  */
 async function handleNewGame() {
   try {
+    // 清除保存的游戏状态
+    clearGameState();
+    setGlobalState('isPaused', false);
+
     setLoading(true);
     stopTimer();
     setTimerDisplay(i18n.t('buttons.generating'));
@@ -147,6 +165,9 @@ async function handleNewGame() {
     // 启动计时器
     resetTimer();
     startTimer();
+
+    // 更新暂停按钮
+    updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
 
     setLoading(false);
     showSuccess(i18n.t('puzzleGenerated', { difficulty: i18n.t(`difficulty.${difficulty}`) }));
@@ -286,6 +307,10 @@ async function handleBoardComplete() {
   console.log('Validation result:', isCorrect, errors);
 
   if (isCorrect) {
+    // 清除保存的游戏状态
+    clearGameState();
+    setGlobalState('isPaused', false);
+
     // 停止计时器
     stopTimer();
     const elapsed = getElapsedTime();
@@ -341,6 +366,153 @@ function handleClearRecords() {
 
   renderRecords();
   showToast(i18n.t('status.recordsCleared'), 'info');
+}
+
+/**
+ * 处理暂停
+ */
+function handlePause() {
+  if (!puzzle || getGlobalState('isPaused')) return;
+
+  // 设置暂停状态
+  setGlobalState('isPaused', true);
+
+  // 暂停计时器
+  pauseTimer();
+
+  // 保存当前游戏状态
+  const currentBoard = readUserBoard();
+  saveGameState({
+    solution,
+    puzzle,
+    givenMask,
+    currentBoard,
+    elapsedTime: getElapsedTime(),
+    difficulty: getDifficulty(),
+    isPaused: true
+  });
+
+  // 显示遮罩
+  showPauseOverlayDirect();
+
+  // 禁用控件
+  disableControlsForPause();
+
+  // 更新暂停按钮
+  updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
+
+  emit('game:paused');
+}
+
+/**
+ * 处理恢复
+ */
+function handleResume() {
+  if (!puzzle || !getGlobalState('isPaused')) return;
+
+  // 清除暂停状态
+  setGlobalState('isPaused', false);
+
+  // 隐藏遮罩
+  hidePauseOverlay();
+
+  // 恢复计时器
+  resumeTimer();
+
+  // 启用控件
+  enableControlsFromPause();
+
+  // 更新暂停按钮
+  updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
+
+  // 保存恢复后的状态
+  const currentBoard = readUserBoard();
+  saveGameState({
+    solution,
+    puzzle,
+    givenMask,
+    currentBoard,
+    elapsedTime: getElapsedTime(),
+    difficulty: getDifficulty(),
+    isPaused: false
+  });
+
+  emit('game:resumed');
+}
+
+/**
+ * 处理计时器滴答 - 自动保存游戏状态
+ */
+function handleTimerTick({ elapsed }) {
+  if (!puzzle || getGlobalState('isPaused')) return;
+
+  const now = Date.now();
+  // 节流：每5秒保存一次
+  if (now - lastSaveTime >= SAVE_INTERVAL) {
+    const currentBoard = readUserBoard();
+    saveGameState({
+      solution,
+      puzzle,
+      givenMask,
+      currentBoard,
+      elapsed,
+      difficulty: getDifficulty(),
+      isPaused: false
+    });
+    lastSaveTime = now;
+  }
+}
+
+/**
+ * 检查并恢复保存的游戏状态
+ */
+async function checkAndRestoreGameState() {
+  const savedState = loadGameState();
+  if (!savedState) return;
+
+  // 检查保存状态是否在24小时内
+  const hoursSinceSave = (Date.now() - savedState.savedAt) / (1000 * 60 * 60);
+  if (hoursSinceSave > 24) {
+    clearGameState();
+    return;
+  }
+
+  // 恢复游戏状态
+  solution = savedState.solution;
+  puzzle = savedState.puzzle;
+  givenMask = savedState.givenMask;
+
+  // 恢复棋盘
+  renderBoard(savedState.currentBoard, givenMask);
+
+  // 设置难度
+  setDifficulty(savedState.difficulty);
+
+  if (savedState.isPaused) {
+    // 游戏处于暂停状态
+    setGlobalState('isPaused', true);
+
+    // 设置计时器显示
+    setElapsedTime(savedState.elapsedTime);
+
+    // 初始化并显示暂停遮罩
+    initPauseOverlay();
+    showPauseOverlayDirect();
+
+    // 禁用控件
+    disableControlsForPause();
+
+    // 更新暂停按钮
+    updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
+  } else {
+    // 游戏处于进行中状态 - 从保存的时间继续计时
+    startTimerWithElapsed(savedState.elapsedTime);
+
+    // 更新暂停按钮
+    updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
+  }
+
+  emit('game:state:restored', { state: savedState });
 }
 
 /**
