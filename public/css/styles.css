@@ -184,6 +184,14 @@ h1 {
   padding: 10px 0;
 }
 
+/* 计时器区域（带暂停按钮）*/
+#timerArea.timer-area-with-pause {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
 /* 棋盘区域 */
 .board-wrapper {
   display: flex;

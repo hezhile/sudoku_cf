@@ -60,12 +60,10 @@ function createPauseButton() {
   // 添加到计时器区域
   const timerArea = document.getElementById('timerArea');
   if (timerArea) {
-    // 设置为 flex 布局以并排显示
-    timerArea.style.display = 'flex';
-    timerArea.style.alignItems = 'center';
-    timerArea.style.justifyContent = 'center';
-    timerArea.style.gap = '10px';
+    // 使用 CSS 类而不是内联样式
+    timerArea.classList.add('timer-area-with-pause');
     timerArea.appendChild(pauseButton);
+    console.log('Pause button created and added to timer area');
   } else {
     console.warn('Timer area not found for pause button');
   }
