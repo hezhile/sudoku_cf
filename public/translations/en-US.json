@@ -87,5 +87,6 @@
   "pause": {
     "title": "Game Paused",
     "resume": "↩️ Resume"
-  }
+  },
+  "globalGames": "Global Games Created"
 }

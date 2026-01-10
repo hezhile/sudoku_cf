@@ -292,6 +292,31 @@ input.cell-input {
   cursor: pointer;
 }
 
+/* 全局计数器 */
+.game-counter-section {
+  background: var(--bg-records);
+  border: 1px solid var(--border-normal);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  margin-top: 12px;
+}
+
+.counter-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.counter-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 响应式调整 */
 @media (max-width: 600px) {
   .header-section { flex-direction: column; align-items: flex-start; }

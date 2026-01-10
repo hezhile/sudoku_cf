@@ -30,6 +30,8 @@ import { addListener, removeListener, createListenerGroup } from './utils/listen
 
 // 配置
 import { DIFFICULTY_HOLES } from './config/constants.js';
+// 计数器模块
+import { initCounter, incrementGameCount } from './api/counter.js';
 
 // 获取全局i18n实例（将在初始化后设置）
 let i18n = null;
@@ -83,6 +85,9 @@ async function init() {
 
     // 现在可以安全地渲染记录，因为翻译已经加载完成
     renderRecords();
+
+    // 初始化全局计数器
+    initCounter();
   } catch (error) {
     console.error('初始化失败:', error);
     if (i18n) {
@@ -172,6 +177,9 @@ async function handleNewGame() {
     setLoading(false);
     showSuccess(i18n.t('puzzleGenerated', { difficulty: i18n.t(`difficulty.${difficulty}`) }));
     emit('game:started', { difficulty });
+
+    // 增加全局计数（非阻塞，不影响游戏体验）
+    incrementGameCount();
   } catch (error) {
     console.error('生成失败:', error);
     showError(i18n.t('errors.generationFailed'));

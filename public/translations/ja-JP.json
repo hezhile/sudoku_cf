@@ -87,5 +87,6 @@
   "pause": {
     "title": "一時停止中",
     "resume": "↩️ 再開"
-  }
+  },
+  "globalGames": "グローバルゲーム作成数"
 }
