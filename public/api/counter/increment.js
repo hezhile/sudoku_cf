@@ -17,17 +17,38 @@
 export async function onRequestPost(context) {
     const { env } = context;
 
-    // 获取当前计数，如果不存在则返回 0
-    const currentCount = await env.SUDOKU_COUNTER.get('sudoku:game_count');
-    const newCount = (parseInt(currentCount) || 0) + 1;
+    // 检查 KV 是否已绑定
+    if (!env.SUDOKU_COUNTER) {
+        return new Response(JSON.stringify({
+            error: 'KV_NOT_BOUND',
+            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.'
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 
-    // 保存新计数（1年过期时间，每次写入会自动续期）
-    await env.SUDOKU_COUNTER.put('sudoku:game_count', newCount.toString(), {
-        expirationTtl: 31536000 // 365天
-    });
+    try {
+        // 获取当前计数，如果不存在则返回 0
+        const currentCount = await env.SUDOKU_COUNTER.get('sudoku:game_count');
+        const newCount = (parseInt(currentCount) || 0) + 1;
 
-    // 返回新计数
-    return new Response(JSON.stringify({ count: newCount }), {
-        headers: { 'Content-Type': 'application/json' }
-    });
+        // 保存新计数（1年过期时间，每次写入会自动续期）
+        await env.SUDOKU_COUNTER.put('sudoku:game_count', newCount.toString(), {
+            expirationTtl: 31536000 // 365天
+        });
+
+        // 返回新计数
+        return new Response(JSON.stringify({ count: newCount }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'KV_ERROR',
+            message: error.message
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 }

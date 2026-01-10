@@ -13,16 +13,40 @@
  * 返回格式:
  * - 成功: { "count": 123 }
  * - 首次访问（无数据）: { "count": 0 }
+ * - KV 未绑定: { "error": "KV_NOT_BOUND", ... }
  */
 export async function onRequestGet(context) {
     const { env } = context;
 
-    // 从 KV 获取当前计数，如果不存在则返回 0
-    const currentCount = await env.SUDOKU_COUNTER.get('sudoku:game_count');
+    // 检查 KV 是否已绑定
+    if (!env.SUDOKU_COUNTER) {
+        return new Response(JSON.stringify({
+            error: 'KV_NOT_BOUND',
+            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.',
+            count: 0
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 
-    return new Response(JSON.stringify({
-        count: parseInt(currentCount) || 0
-    }), {
-        headers: { 'Content-Type': 'application/json' }
-    });
+    try {
+        // 从 KV 获取当前计数，如果不存在则返回 0
+        const currentCount = await env.SUDOKU_COUNTER.get('sudoku:game_count');
+
+        return new Response(JSON.stringify({
+            count: parseInt(currentCount) || 0
+        }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'KV_ERROR',
+            message: error.message,
+            count: 0
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 }
