@@ -1,6 +1,6 @@
 /**
- * GET /api/counter/get
- * 获取当前全局游戏计数
+ * POST /api/counter/increment
+ * 增加全局游戏计数
  *
  * Cloudflare Pages Function
  *
@@ -10,20 +10,18 @@
  *    - Variable name: SUDOKU_COUNTER (必须大写)
  *    - KV namespace: 选择创建的命名空间
  *
- * 返回格式:
- * - 成功: { "count": 123 }
- * - 首次访问（无数据）: { "count": 0 }
- * - KV 未绑定: { "error": "KV_NOT_BOUND", ... }
+ * KV 存储结构:
+ * - Key: sudoku:game_count
+ * - Value: 数字字符串 (如 "123")
  */
-export async function onRequestGet(context) {
+export async function onRequest(context) {
     const { env } = context;
 
     // 检查 KV 是否已绑定
     if (!env.SUDOKU_COUNTER) {
         return new Response(JSON.stringify({
             error: 'KV_NOT_BOUND',
-            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.',
-            count: 0
+            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.'
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
@@ -31,19 +29,23 @@ export async function onRequestGet(context) {
     }
 
     try {
-        // 从 KV 获取当前计数，如果不存在则返回 0
+        // 获取当前计数，如果不存在则返回 0
         const currentCount = await env.SUDOKU_COUNTER.get('sudoku:game_count');
+        const newCount = (parseInt(currentCount) || 0) + 1;
 
-        return new Response(JSON.stringify({
-            count: parseInt(currentCount) || 0
-        }), {
+        // 保存新计数（1年过期时间，每次写入会自动续期）
+        await env.SUDOKU_COUNTER.put('sudoku:game_count', newCount.toString(), {
+            expirationTtl: 31536000 // 365天
+        });
+
+        // 返回新计数
+        return new Response(JSON.stringify({ count: newCount }), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
         return new Response(JSON.stringify({
             error: 'KV_ERROR',
-            message: error.message,
-            count: 0
+            message: error.message
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
