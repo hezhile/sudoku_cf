@@ -21,7 +21,8 @@ export async function onRequest(context) {
     if (!env.SUDOKU_COUNTER) {
         return new Response(JSON.stringify({
             error: 'KV_NOT_BOUND',
-            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.'
+            message: 'KV namespace not bound. Please bind SUDOKU_COUNTER in Cloudflare Dashboard.',
+            count: 0
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
@@ -45,7 +46,8 @@ export async function onRequest(context) {
     } catch (error) {
         return new Response(JSON.stringify({
             error: 'KV_ERROR',
-            message: error.message
+            message: error.message,
+            count: 0
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }

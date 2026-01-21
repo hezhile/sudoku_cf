@@ -11,12 +11,12 @@ const API_BASE = '/api/counter';
 export async function getGameCount() {
     try {
         const response = await fetch(`${API_BASE}/get`);
-        if (!response.ok) return null;
         const data = await response.json();
-        return data.count;
+        // 即使响应是 error，也返回 count (可能是 0)
+        return data.count ?? 0;
     } catch (error) {
         console.warn('获取计数失败:', error);
-        return null;
+        return 0;
     }
 }
 
@@ -29,10 +29,12 @@ export async function incrementGameCount() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        if (!response.ok) return false;
         const data = await response.json();
-        updateCounterDisplay(data.count);
-        return true;
+        // 检查 count 是否存在，并更新显示
+        if (typeof data.count === 'number') {
+            updateCounterDisplay(data.count);
+        }
+        return response.ok;
     } catch (error) {
         console.warn('增加计数失败:', error);
         return false;
@@ -44,9 +46,8 @@ export async function incrementGameCount() {
  */
 export async function initCounter() {
     const count = await getGameCount();
-    if (count !== null) {
-        updateCounterDisplay(count);
-    }
+    // count 现在默认为 0，不再是 null
+    updateCounterDisplay(count);
 }
 
 /**
@@ -55,7 +56,9 @@ export async function initCounter() {
 function updateCounterDisplay(count) {
     const counterEl = document.getElementById('game-counter');
     if (counterEl) {
-        counterEl.textContent = formatNumber(count);
+        // 确保传入的是有效数字
+        const num = typeof count === 'number' ? count : 0;
+        counterEl.textContent = formatNumber(num);
     }
 }
 
