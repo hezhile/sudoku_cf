@@ -6,12 +6,39 @@
 const API_BASE = '/api/counter';
 
 /**
+ * Validate and parse JSON response from API
+ * @param {Response} response - The fetch response object
+ * @returns {Promise<object>} - Parsed JSON data
+ * @throws {Error} - If response is not OK or not JSON
+ */
+async function parseJSONResponse(response) {
+    // Check if response is OK
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Check Content-Type
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+        // Log for debugging
+        console.warn('API returned non-JSON response:', {
+            url: response.url,
+            status: response.status,
+            contentType: contentType
+        });
+        throw new Error(`Expected JSON, got ${contentType || 'unknown content type'}`);
+    }
+
+    return response.json();
+}
+
+/**
  * 获取当前游戏计数
  */
 export async function getGameCount() {
     try {
         const response = await fetch(`${API_BASE}/get`);
-        const data = await response.json();
+        const data = await parseJSONResponse(response);
         // 即使响应是 error，也返回 count (可能是 0)
         return data.count ?? 0;
     } catch (error) {
@@ -29,7 +56,7 @@ export async function incrementGameCount() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        const data = await response.json();
+        const data = await parseJSONResponse(response);
         // 检查 count 是否存在，并更新显示
         if (typeof data.count === 'number') {
             updateCounterDisplay(data.count);
