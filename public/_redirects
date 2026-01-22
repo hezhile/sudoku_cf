@@ -1,5 +1,3 @@
-# SPA fallback - exclude /api routes explicitly
-# The order matters: specific patterns first, then wildcard
-/api/* /api/:splat
-
+# SPA fallback - all non-file routes serve index.html
+# Note: /api/* routes are handled by Pages Functions automatically
 /* /index.html 200
