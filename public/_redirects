@@ -1,5 +1,2 @@
-# API routes - let Pages Functions handle these
-/api/* /api/:splat 200
-
-# All other routes serve index.html (for SPA routing)
+# SPA fallback - all non-file routes serve index.html
 /* /index.html 200
