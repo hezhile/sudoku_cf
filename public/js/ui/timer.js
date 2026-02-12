@@ -63,7 +63,6 @@ function createPauseButton() {
     // 使用 CSS 类而不是内联样式
     timerArea.classList.add('timer-area-with-pause');
     timerArea.appendChild(pauseButton);
-    console.log('Pause button created and added to timer area');
   } else {
     console.warn('Timer area not found for pause button');
   }

@@ -99,16 +99,13 @@ function onCellInput(e) {
   const input = e.target;
   const isResetting = getGlobalState('isResetting');
   const isPaused = getGlobalState('isPaused');
-  console.log('onCellInput called, isResetting:', isResetting, 'isPaused:', isPaused);
 
   // 如果正在重置或暂停，不处理输入事件
   if (isResetting) {
-    console.log('Skipping input event due to reset');
     return;
   }
 
   if (isPaused) {
-    console.log('Skipping input event due to pause');
     // 清空输入，阻止用户在暂停时输入
     input.value = '';
     return;
@@ -258,16 +255,13 @@ export function readUserBoard() {
 function checkAutoComplete() {
   const isResetting = getGlobalState('isResetting');
   const isPaused = getGlobalState('isPaused');
-  console.log('checkAutoComplete called, isResetting:', isResetting, 'isPaused:', isPaused);
 
   // 如果正在重置或暂停，不进行检查
   if (isResetting) {
-    console.log('Skipping auto-complete check due to reset');
     return;
   }
 
   if (isPaused) {
-    console.log('Skipping auto-complete check due to pause');
     return;
   }
 
@@ -278,27 +272,21 @@ function checkAutoComplete() {
 
   window._checkCompleteTimeout = setTimeout(() => {
     const board = readUserBoard();
-    console.log('Board state:', board);
 
     // 检查是否全部填满
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
         if (board[r][c] === 0) {
-          console.log('Board not complete, cell [', r, ',', c, '] is empty');
           return;
         }
       }
     }
 
-    console.log('Board is complete, checking for conflicts...');
     // 检查是否有冲突
     const hasConflict = !!boardElement.querySelector('.conflict');
     if (!hasConflict) {
-      console.log('No conflicts found, emitting board:complete');
       // 触发完成事件
       emit('board:complete', { board });
-    } else {
-      console.log('Conflicts found, not completing');
     }
   }, 100); // 延迟100ms执行，避免重复触发
 }

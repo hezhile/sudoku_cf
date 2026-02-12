@@ -12,7 +12,7 @@ import { validateSolution } from './core/validator.js';
 import { initBoardRenderer, renderBoard, readUserBoard } from './ui/board-renderer.js';
 import { initTimer, startTimer, startTimerWithElapsed, stopTimer, resetTimer, pauseTimer, resumeTimer, getElapsedTime, setTimerDisplay, updatePauseButton, setElapsedTime } from './ui/timer.js';
 import { showSuccess, showError, showWarning, showToast } from './ui/toast.js';
-import { initializeControls, getDifficulty, setLoading, disableControlsForPause, enableControlsFromPause, setDifficulty } from './ui/controls.js';
+import { initializeControls, getDifficulty, setLoading, disableControls, enableControls, setDifficulty } from './ui/controls.js';
 import { initPauseOverlay, showPauseOverlay as showPauseOverlayDirect, hidePauseOverlay } from './ui/pause-overlay.js';
 
 // 存储模块
@@ -192,7 +192,6 @@ async function handleNewGame() {
  * 处理重置
  */
 function handleReset() {
-  console.log('handleReset called, puzzle exists:', !!puzzle);
   if (!puzzle) {
     showWarning(i18n.t('errors.pleaseGenerate'));
     return;
@@ -200,29 +199,20 @@ function handleReset() {
 
   // 防止重复重置
   if (getGlobalState('isResetting')) {
-    console.log('Reset already in progress, ignoring');
     return;
   }
 
   setGlobalState('isResetting', true);
-  console.log('Resetting game...');
   stopTimer();
-  console.log('Timer stopped');
   renderBoard(puzzle, givenMask);
-  console.log('Board rendered');
   resetTimer();
-  console.log('Timer reset');
   startTimer();
-  console.log('Timer started');
 
   // 延迟显示toast，确保其他操作完成
   setTimeout(() => {
-    console.log('Showing reset toast');
     showToast(i18n.t('status.gameReset'), 'info');
     setGlobalState('isResetting', false);
   }, 100);
-
-  console.log('Reset complete');
 }
 
 /**
@@ -300,19 +290,15 @@ function updateLanguageSelector() {
  * 处理棋盘完成
  */
 async function handleBoardComplete() {
-  console.log('handleBoardComplete called');
   if (!solution) {
-    console.log('No solution, showing error');
     showError(i18n.t('errors.gameNotStarted'));
     return;
   }
 
   const userBoard = readUserBoard();
-  console.log('Validating solution...');
 
   // 验证解答
   const { isCorrect, errors } = validateSolution(userBoard, solution);
-  console.log('Validation result:', isCorrect, errors);
 
   if (isCorrect) {
     // 清除保存的游戏状态
@@ -404,7 +390,7 @@ function handlePause() {
   showPauseOverlayDirect();
 
   // 禁用控件
-  disableControlsForPause();
+  disableControls();
 
   // 更新暂停按钮
   updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
@@ -428,7 +414,7 @@ function handleResume() {
   resumeTimer();
 
   // 启用控件
-  enableControlsFromPause();
+  enableControls();
 
   // 更新暂停按钮
   updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
@@ -508,7 +494,7 @@ async function checkAndRestoreGameState() {
     showPauseOverlayDirect();
 
     // 禁用控件
-    disableControlsForPause();
+    disableControls();
 
     // 更新暂停按钮
     updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);

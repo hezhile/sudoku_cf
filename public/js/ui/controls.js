@@ -27,7 +27,6 @@ let clearRecordsBtn = null;
 export function initializeControls() {
   // 防止重复初始化
   if (window._controlsInitialized) {
-    console.log('Controls already initialized, skipping');
     return;
   }
 
@@ -55,7 +54,6 @@ export function initializeControls() {
   }
 
   window._controlsInitialized = true;
-  console.log('Controls initialized');
 }
 
 /**
@@ -69,9 +67,7 @@ function handleNewGame() {
  * 处理重置按钮点击
  */
 function handleReset() {
-  console.log('Reset button clicked');
   if (confirm(getI18n().t('confirmReset'))) {
-    console.log('Reset confirmed, emitting game:reset event');
     emit('game:reset');
   }
 }
@@ -138,27 +134,6 @@ export function disableControls() {
  * enableControls();
  */
 export function enableControls() {
-  if (newBtn) newBtn.disabled = false;
-  if (resetBtn) resetBtn.disabled = false;
-  if (difficultyEl) difficultyEl.disabled = false;
-  if (clearRecordsBtn) clearRecordsBtn.disabled = false;
-}
-
-/**
- * 禁用所有控件（用于暂停状态）
- * 暂停按钮保持启用
- */
-export function disableControlsForPause() {
-  if (newBtn) newBtn.disabled = true;
-  if (resetBtn) resetBtn.disabled = true;
-  if (difficultyEl) difficultyEl.disabled = true;
-  if (clearRecordsBtn) clearRecordsBtn.disabled = true;
-}
-
-/**
- * 启用所有控件（从暂停状态恢复）
- */
-export function enableControlsFromPause() {
   if (newBtn) newBtn.disabled = false;
   if (resetBtn) resetBtn.disabled = false;
   if (difficultyEl) difficultyEl.disabled = false;
