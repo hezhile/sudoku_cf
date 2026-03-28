@@ -7,6 +7,8 @@ import { STORAGE_KEY } from '../config/constants.js';
 import { emit } from '../utils/event-bus.js';
 import { safeJSONParse, safeJSONStringify } from '../utils/helpers.js';
 import { showWarning, showError } from '../ui/toast.js';
+import { EVENTS } from '../config/events.js';
+import { StorageAdapter } from './StorageAdapter.js';
 
 // 获取全局i18n实例
 const getI18n = () => window.i18n;
@@ -32,7 +34,7 @@ export function loadRecords() {
       return {};
     }
     console.error('加载记录失败:', error);
-    emit('storage:error', { error, operation: 'load' });
+    emit(EVENTS.STORAGE_ERROR, { error, operation: 'load' });
     return {};
   }
 }
@@ -47,22 +49,22 @@ export function saveRecords(records) {
   try {
     const json = safeJSONStringify(records, '{}');
     localStorage.setItem(STORAGE_KEY, json);
-    emit('records:saved', { records });
+    emit(EVENTS.RECORDS_SAVED, { records });
   } catch (error) {
     // 处理隐私模式或localStorage不可用的情况
     if (error.name === 'SecurityError' || error.name === 'TypeError') {
       console.warn('localStorage is not available (privacy mode), records will not be saved');
       // 在隐私模式下，仍然触发事件以保持应用正常运行
-      emit('records:saved', { records });
+      emit(EVENTS.RECORDS_SAVED, { records });
       return;
     }
     console.error('保存记录失败:', error);
 
     if (error.name === 'QuotaExceededError') {
-      emit('storage:quota-exceeded', { error });
+      emit(EVENTS.STORAGE_QUOTA_EXCEEDED, { error });
       showWarning(getI18n().t('errors.storageFull'));
     } else {
-      emit('storage:error', { error, operation: 'save' });
+      emit(EVENTS.STORAGE_ERROR, { error, operation: 'save' });
       showError(getI18n().t('errors.saveFailed'));
     }
   }
@@ -101,14 +103,14 @@ export async function saveRecord(difficulty, timeMs) {
 
     saveRecords(rec);
 
-    emit('record:saved', {
+    emit(EVENTS.RECORD_SAVED, {
       difficulty,
       time: timeMs,
       isBest
     });
   } catch (error) {
     console.error('保存记录失败:', error);
-    emit('storage:error', { error, operation: 'saveRecord' });
+    emit(EVENTS.STORAGE_ERROR, { error, operation: 'saveRecord' });
   }
 }
 
@@ -120,16 +122,16 @@ export async function saveRecord(difficulty, timeMs) {
 export function clearRecords() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    emit('records:cleared');
+    emit(EVENTS.RECORDS_CLEARED);
   } catch (error) {
     // 处理隐私模式或localStorage不可用的情况
     if (error.name === 'SecurityError' || error.name === 'TypeError') {
       console.warn('localStorage is not available (privacy mode), no records to clear');
-      emit('records:cleared');
+      emit(EVENTS.RECORDS_CLEARED);
       return;
     }
     console.error('清除记录失败:', error);
-    emit('storage:error', { error, operation: 'clear' });
+    emit(EVENTS.STORAGE_ERROR, { error, operation: 'clear' });
   }
 }
 
@@ -327,7 +329,7 @@ export function importRecords(jsonString) {
     }
 
     saveRecords(records);
-    emit('records:imported', { records });
+    emit(EVENTS.RECORDS_IMPORTED, { records });
     return true;
   } catch (error) {
     console.error('导入记录失败:', error);
@@ -335,3 +337,37 @@ export function importRecords(jsonString) {
     return false;
   }
 }
+
+/**
+ * 本地记录存储适配器
+ */
+class LocalRecordsAdapter extends StorageAdapter {
+  constructor() {
+    super('LocalRecordsAdapter');
+  }
+
+  async save(key, data) {
+    if (key !== 'records') {
+      throw new Error(`Unsupported key for local records adapter: ${key}`);
+    }
+    saveRecords(data || {});
+    return true;
+  }
+
+  async load(key) {
+    if (key !== 'records') {
+      throw new Error(`Unsupported key for local records adapter: ${key}`);
+    }
+    return loadRecords();
+  }
+
+  async clear(key) {
+    if (key !== 'records') {
+      throw new Error(`Unsupported key for local records adapter: ${key}`);
+    }
+    clearRecords();
+    return true;
+  }
+}
+
+export const localRecordsAdapter = new LocalRecordsAdapter();

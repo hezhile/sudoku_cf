@@ -7,6 +7,7 @@
 import { generateFullBoard, digHolesFromSolution } from './core/sudoku-engine.js';
 import { digHolesWithValidation } from './core/solver.js';
 import { validateSolution } from './core/validator.js';
+import { gameStateManager } from './core/game-state-manager.js';
 
 // UI 模块
 import { initBoardRenderer, renderBoard, readUserBoard } from './ui/board-renderer.js';
@@ -27,6 +28,7 @@ import { initAuth } from './auth/auth-handler.js';
 import { on, emit, setGlobalState, getGlobalState } from './utils/event-bus.js';
 import { formatTime } from './utils/helpers.js';
 import { addListener, removeListener, createListenerGroup } from './utils/listener-manager.js';
+import { EVENTS } from './config/events.js';
 
 // 配置
 import { DIFFICULTY_HOLES } from './config/constants.js';
@@ -41,15 +43,7 @@ const uiListeners = createListenerGroup('uiListeners');
 const languageListeners = createListenerGroup('languageListeners');
 
 // 自动保存节流
-let lastSaveTime = 0;
 const SAVE_INTERVAL = 5000; // 每5秒保存一次
-
-/**
- * 游戏状态
- */
-let solution = null;      // 完整解（9x9 数组）
-let puzzle = null;        // 题目（带空格的 9x9）
-let givenMask = null;     // 9x9 布尔，true 表示预填（不可编辑）
 
 /**
  * 应用初始化
@@ -61,9 +55,6 @@ async function init() {
 
     // 初始化多语言系统（优先初始化）
     await initializeI18n();
-
-    // 确保翻译已加载后再继续初始化
-    await i18n.ensureTranslationsLoaded();
 
     // 初始化各个模块
     initBoardRenderer('#board');
@@ -86,8 +77,8 @@ async function init() {
     // 现在可以安全地渲染记录，因为翻译已经加载完成
     renderRecords();
 
-    // 初始化全局计数器
-    initCounter();
+    // 非关键初始化：延迟到空闲时，避免阻塞首屏棋盘渲染
+    scheduleNonCriticalInitialization();
   } catch (error) {
     console.error('初始化失败:', error);
     if (i18n) {
@@ -99,30 +90,53 @@ async function init() {
   }
 }
 
+function scheduleNonCriticalInitialization() {
+  const run = () => {
+    initCounter();
+    registerServiceWorker();
+  };
+
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 1500 });
+  } else {
+    setTimeout(run, 0);
+  }
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  navigator.serviceWorker.register('/sw.js').catch((error) => {
+    console.warn('Service Worker registration failed:', error);
+  });
+}
+
 /**
  * 注册事件处理器
  */
 function registerEventHandlers() {
   // 游戏事件
-  on('game:new', handleNewGame);
-  on('game:reset', handleReset);
-  on('game:pause', handlePause);
-  on('game:resume', handleResume);
-  on('board:complete', handleBoardComplete);
+  on(EVENTS.GAME_NEW, handleNewGame);
+  on(EVENTS.GAME_RESET, handleReset);
+  on(EVENTS.GAME_PAUSED, handlePause);
+  on(EVENTS.GAME_RESUMED, handleResume);
+  on(EVENTS.BOARD_COMPLETE, handleBoardComplete);
 
   // 计时器事件（用于自动保存）
-  on('timer:tick', handleTimerTick);
+  on(EVENTS.TIMER_TICK, handleTimerTick);
 
   // 记录事件
-  on('records:clear', handleClearRecords);
+  on(EVENTS.RECORDS_CLEAR, handleClearRecords);
 
   // 认证事件（可选的额外处理）
-  on('auth:login', ({ user }) => {
+  on(EVENTS.AUTH_LOGIN, ({ user }) => {
     showSuccess(i18n.t('welcome', { email: user.email }));
   });
 
   // 同步事件
-  on('sync:failed', ({ error }) => {
+  on(EVENTS.SYNC_FAILED, ({ error }) => {
     console.warn('同步失败:', error);
   });
 }
@@ -156,13 +170,15 @@ async function handleNewGame() {
     const holesTarget = DIFFICULTY_HOLES[difficulty];
 
     // 生成完整解
-    solution = generateFullBoard();
+    const solution = generateFullBoard();
 
     // 挖空并验证唯一性
-    puzzle = digHolesWithValidation(solution, holesTarget);
+    const puzzle = digHolesWithValidation(solution, holesTarget);
 
     // 创建 givenMask（标记预填格子）
-    givenMask = puzzle.map(row => row.map(cell => cell !== 0));
+    const givenMask = puzzle.map(row => row.map(cell => cell !== 0));
+    gameStateManager.setGame({ solution, puzzle, givenMask });
+    gameStateManager.setLastSaveTime(0);
 
     // 渲染棋盘
     renderBoard(puzzle, givenMask);
@@ -176,7 +192,7 @@ async function handleNewGame() {
 
     setLoading(false);
     showSuccess(i18n.t('puzzleGenerated', { difficulty: i18n.t(`difficulty.${difficulty}`) }));
-    emit('game:started', { difficulty });
+    emit(EVENTS.GAME_STARTED, { difficulty });
 
     // 增加全局计数（非阻塞，不影响游戏体验）
     incrementGameCount();
@@ -184,7 +200,7 @@ async function handleNewGame() {
     console.error('生成失败:', error);
     showError(i18n.t('errors.generationFailed'));
     setLoading(false);
-    emit('error:generation', { error });
+    emit(EVENTS.ERROR_GENERATION, { error });
   }
 }
 
@@ -192,6 +208,7 @@ async function handleNewGame() {
  * 处理重置
  */
 function handleReset() {
+  const { puzzle, givenMask } = gameStateManager.getSnapshot();
   if (!puzzle) {
     showWarning(i18n.t('errors.pleaseGenerate'));
     return;
@@ -290,6 +307,7 @@ function updateLanguageSelector() {
  * 处理棋盘完成
  */
 async function handleBoardComplete() {
+  const { solution } = gameStateManager.getSnapshot();
   if (!solution) {
     showError(i18n.t('errors.gameNotStarted'));
     return;
@@ -339,14 +357,14 @@ async function handleBoardComplete() {
     // 显示成功消息
     showSuccess(i18n.t('gameComplete', { time: formatTime(elapsed) }));
 
-    emit('game:completed', {
+    emit(EVENTS.GAME_COMPLETED, {
       difficulty,
       elapsed,
       uploaded
     });
   } else {
     showError(i18n.t('errors.incorrectAnswer'));
-    emit('game:failed', { errors });
+    emit(EVENTS.GAME_FAILED, { errors });
   }
 }
 
@@ -366,6 +384,7 @@ function handleClearRecords() {
  * 处理暂停
  */
 function handlePause() {
+  const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
   if (!puzzle || getGlobalState('isPaused')) return;
 
   // 设置暂停状态
@@ -395,13 +414,14 @@ function handlePause() {
   // 更新暂停按钮
   updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
 
-  emit('game:paused');
+  emit(EVENTS.GAME_PAUSED);
 }
 
 /**
  * 处理恢复
  */
 function handleResume() {
+  const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
   if (!puzzle || !getGlobalState('isPaused')) return;
 
   // 清除暂停状态
@@ -431,13 +451,15 @@ function handleResume() {
     isPaused: false
   });
 
-  emit('game:resumed');
+  emit(EVENTS.GAME_RESUMED);
 }
 
 /**
  * 处理计时器滴答 - 自动保存游戏状态
  */
 function handleTimerTick({ elapsed }) {
+  const state = gameStateManager.getSnapshot();
+  const { puzzle, solution, givenMask, lastSaveTime } = state;
   if (!puzzle || getGlobalState('isPaused')) return;
 
   const now = Date.now();
@@ -453,7 +475,7 @@ function handleTimerTick({ elapsed }) {
       difficulty: getDifficulty(),
       isPaused: false
     });
-    lastSaveTime = now;
+    gameStateManager.setLastSaveTime(now);
   }
 }
 
@@ -472,9 +494,13 @@ async function checkAndRestoreGameState() {
   }
 
   // 恢复游戏状态
-  solution = savedState.solution;
-  puzzle = savedState.puzzle;
-  givenMask = savedState.givenMask;
+  gameStateManager.setGame({
+    solution: savedState.solution,
+    puzzle: savedState.puzzle,
+    givenMask: savedState.givenMask
+  });
+
+  const { givenMask } = gameStateManager.getSnapshot();
 
   // 恢复棋盘
   renderBoard(savedState.currentBoard, givenMask);
@@ -506,7 +532,7 @@ async function checkAndRestoreGameState() {
     updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
   }
 
-  emit('game:state:restored', { state: savedState });
+  emit(EVENTS.GAME_STATE_RESTORED, { state: savedState });
 }
 
 /**
@@ -564,9 +590,9 @@ if (document.readyState === 'loading') {
 // 导出供调试使用
 if (typeof window !== 'undefined') {
   window.sudokuDebug = {
-    getSolution: () => solution,
-    getPuzzle: () => puzzle,
-    getGivenMask: () => givenMask,
+    getSolution: () => gameStateManager.getSnapshot().solution,
+    getPuzzle: () => gameStateManager.getSnapshot().puzzle,
+    getGivenMask: () => gameStateManager.getSnapshot().givenMask,
     readUserBoard,
     emit
   };

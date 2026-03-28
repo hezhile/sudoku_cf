@@ -7,6 +7,8 @@ import { getSupabaseClient, getCurrentSession } from '../auth/auth-handler.js';
 import { loadRecords, saveRecords, getUnsyncedRecords, markAllAsSynced } from './local-storage.js';
 import { emit } from '../utils/event-bus.js';
 import { showSuccess, showError, showWarning } from '../ui/toast.js';
+import { EVENTS } from '../config/events.js';
+import { StorageAdapter } from './StorageAdapter.js';
 
 // 获取全局i18n实例
 const getI18n = () => window.i18n;
@@ -58,7 +60,7 @@ export async function syncLocalRecordsToSupabase(userId) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     console.warn('Supabase 客户端未初始化');
-    emit('sync:failed', { reason: 'client_not_initialized' });
+    emit(EVENTS.SYNC_FAILED, { reason: 'client_not_initialized' });
     return;
   }
 
@@ -85,7 +87,7 @@ export async function syncLocalRecordsToSupabase(userId) {
     }
 
     if (rowsToInsert.length === 0) {
-      emit('sync:completed', { count: 0 });
+      emit(EVENTS.SYNC_COMPLETED, { count: 0 });
       return;
     }
 
@@ -102,11 +104,11 @@ export async function syncLocalRecordsToSupabase(userId) {
     await updateBestScores(userId, records);
 
     showSuccess(getI18n().t('buttons.synced', { count: rowsToInsert.length }));
-    emit('sync:completed', { count: rowsToInsert.length });
+    emit(EVENTS.SYNC_COMPLETED, { count: rowsToInsert.length });
   } catch (error) {
     console.error('同步失败:', error);
     showWarning(getI18n().t('errors.syncFailed'));
-    emit('sync:failed', { error });
+    emit(EVENTS.SYNC_FAILED, { error });
   }
 }
 
@@ -172,11 +174,11 @@ async function updateBestScores(userId, records) {
 export function initSyncModule() {
   // 监听登录事件，自动同步
   import('../utils/event-bus.js').then(({ on }) => {
-    on('auth:login', async ({ user }) => {
+    on(EVENTS.AUTH_LOGIN, async ({ user }) => {
       await syncLocalRecordsToSupabase(user.id);
     });
 
-    on('sync:manual-trigger', async ({ userId }) => {
+    on(EVENTS.SYNC_MANUAL_TRIGGER, async ({ userId }) => {
       await syncLocalRecordsToSupabase(userId);
     });
   });
@@ -234,3 +236,45 @@ export async function uploadRecordOnComplete(difficulty, record) {
     return false;
   }
 }
+
+/**
+ * Supabase 同步适配器
+ */
+class SupabaseSyncAdapter extends StorageAdapter {
+  constructor() {
+    super('SupabaseSyncAdapter');
+  }
+
+  async save(key, data) {
+    if (key === 'singleRecord') {
+      const { userId, difficulty, record } = data || {};
+      if (!userId || !difficulty || !record) {
+        throw new Error('singleRecord requires { userId, difficulty, record }');
+      }
+      return uploadSingleRecord(userId, difficulty, record);
+    }
+
+    if (key === 'syncRecords') {
+      const { userId } = data || {};
+      if (!userId) {
+        throw new Error('syncRecords requires { userId }');
+      }
+      await syncLocalRecordsToSupabase(userId);
+      return true;
+    }
+
+    throw new Error(`Unsupported key for supabase sync adapter: ${key}`);
+  }
+
+  async load() {
+    // 云端同步模块不提供通用读接口，保持兼容返回 null
+    return null;
+  }
+
+  async clear() {
+    // 云端同步模块不提供通用清理能力，保持兼容返回 true
+    return true;
+  }
+}
+
+export const supabaseSyncAdapter = new SupabaseSyncAdapter();

@@ -5,6 +5,7 @@
  */
 
 import { emit } from '../utils/event-bus.js';
+import { EVENTS } from '../config/events.js';
 
 let overlayElement = null;
 let boardWrapper = null;
@@ -98,5 +99,5 @@ export function updateOverlayTranslations(t) {
  * 处理恢复按钮点击
  */
 function handleResume() {
-  emit('game:resume');
+  emit(EVENTS.GAME_RESUMED);
 }

@@ -5,6 +5,7 @@
  */
 
 import { GAME_STATE_STORAGE_KEY } from '../config/constants.js';
+import { StorageAdapter } from './StorageAdapter.js';
 
 /**
  * 保存当前游戏状态到 localStorage
@@ -62,3 +63,37 @@ export function clearGameState() {
 export function hasSavedGameState() {
   return loadGameState() !== null;
 }
+
+/**
+ * 游戏状态存储适配器
+ */
+class GameStateAdapter extends StorageAdapter {
+  constructor() {
+    super('GameStateAdapter');
+  }
+
+  async save(key, data) {
+    if (key !== 'gameState') {
+      throw new Error(`Unsupported key for game state adapter: ${key}`);
+    }
+    saveGameState(data || {});
+    return true;
+  }
+
+  async load(key) {
+    if (key !== 'gameState') {
+      throw new Error(`Unsupported key for game state adapter: ${key}`);
+    }
+    return loadGameState();
+  }
+
+  async clear(key) {
+    if (key !== 'gameState') {
+      throw new Error(`Unsupported key for game state adapter: ${key}`);
+    }
+    clearGameState();
+    return true;
+  }
+}
+
+export const gameStateAdapter = new GameStateAdapter();

@@ -1,7 +1,8 @@
-class I18n {
+export class I18n {
   constructor() {
     this.translations = {};
     this.fallbackLang = 'en-US';
+    this.translationCachePrefix = 'sudoku_translations_';
     this._loadingPromises = new Map(); // 缓存正在进行的加载Promise
     this._initializationPromise = this.initializeLanguage();
   }
@@ -18,17 +19,7 @@ class I18n {
       return;
     }
 
-    // 2. IP地理位置检测
-    console.log('Detecting language from location...');
-    const detectedLang = await this.detectLanguageFromLocation();
-    if (detectedLang && detectedLang !== 'en-US') {
-      console.log('Detected language from location:', detectedLang);
-      this.currentLang = detectedLang;
-      this.completeInitialization();
-      return;
-    }
-
-    // 3. 浏览器语言检测
+    // 2. 浏览器语言检测
     console.log('Detecting language from browser...');
     const browserLang = this.getBrowserLanguage();
     if (browserLang) {
@@ -38,7 +29,7 @@ class I18n {
       return;
     }
 
-    // 4. 默认英语
+    // 3. 默认英语
     console.log('Using default language: en-US');
     this.currentLang = 'en-US';
     this.completeInitialization();
@@ -63,37 +54,34 @@ class I18n {
     }
   }
 
-  async detectLanguageFromLocation() {
+  getTranslationCacheKey(lang) {
+    return `${this.translationCachePrefix}${lang}`;
+  }
+
+  getCachedTranslations(lang) {
     try {
-      const response = await fetch('/cdn-cgi/trace');
-      if (response.ok) {
-        const text = await response.text();
-        const match = text.match(/loc=([A-Z]{2})/);
-        if (match) {
-          const countryCode = match[1];
-          console.log('Detected country code:', countryCode);
-          return this.mapCountryToLanguage(countryCode);
-        }
+      const cached = localStorage.getItem(this.getTranslationCacheKey(lang));
+      if (!cached) {
+        return null;
+      }
+
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
       }
     } catch (error) {
-      console.warn('Location detection failed:', error);
+      console.warn('Failed to read translation cache:', error);
     }
     return null;
   }
 
-  mapCountryToLanguage(countryCode) {
-    const countryMap = {
-      'zh-CN': ['CN', 'SG', 'MY'],
-      'ja-JP': ['JP']
-    };
-
-    if (countryMap['zh-CN'].includes(countryCode)) {
-      return 'zh-CN';
+  setCachedTranslations(lang, translations) {
+    try {
+      localStorage.setItem(this.getTranslationCacheKey(lang), JSON.stringify(translations));
+    } catch (error) {
+      // 隐私模式下 localStorage 可能不可用，不影响主流程
+      console.warn('Failed to write translation cache:', error);
     }
-    if (countryMap['ja-JP'].includes(countryCode)) {
-      return 'ja-JP';
-    }
-    return 'en-US';
   }
 
   getBrowserLanguage() {
@@ -117,6 +105,13 @@ class I18n {
       return;
     }
 
+    // 优先读取本地缓存，减少刷新后的等待时间
+    const cachedTranslations = this.getCachedTranslations(lang);
+    if (cachedTranslations) {
+      this.translations[lang] = cachedTranslations;
+      return;
+    }
+
     // 如果正在加载中，返回现有的Promise
     if (this._loadingPromises.has(lang)) {
       return this._loadingPromises.get(lang);
@@ -131,6 +126,7 @@ class I18n {
           throw new Error(`Failed to load translations for ${lang}`);
         }
         this.translations[lang] = await response.json();
+        this.setCachedTranslations(lang, this.translations[lang]);
         console.log(`Successfully loaded translations for ${lang}`, Object.keys(this.translations[lang]));
 
         // 触发翻译加载完成事件

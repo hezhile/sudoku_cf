@@ -6,6 +6,7 @@
 import { emit, getGlobalState } from '../utils/event-bus.js';
 import { formatTime } from '../utils/helpers.js';
 import { TIMER_UPDATE_INTERVAL } from '../config/constants.js';
+import { EVENTS } from '../config/events.js';
 
 /**
  * 计时器状态
@@ -74,9 +75,9 @@ function createPauseButton() {
 function handlePauseToggle() {
   const isPaused = getGlobalState('isPaused');
   if (isPaused) {
-    emit('game:resume');
+    emit(EVENTS.GAME_RESUMED);
   } else {
-    emit('game:pause');
+    emit(EVENTS.GAME_PAUSED);
   }
 }
 
@@ -110,11 +111,11 @@ export function startTimer() {
     if (timerElement) {
       timerElement.textContent = formatTime(elapsed);
     }
-    emit('timer:tick', { elapsed });
+    emit(EVENTS.TIMER_TICK, { elapsed });
   }, TIMER_UPDATE_INTERVAL);
 
   running = true;
-  emit('timer:started', { startTime });
+  emit(EVENTS.TIMER_STARTED, { startTime });
 }
 
 /**
@@ -138,7 +139,7 @@ export function stopTimer() {
   // 停止运行
   running = false;
 
-  emit('timer:stopped', { elapsed });
+  emit(EVENTS.TIMER_STOPPED, { elapsed });
 }
 
 /**
@@ -156,7 +157,7 @@ export function pauseTimer() {
 
   pausedTime = Date.now() - startTime;
   running = false;
-  emit('timer:paused', { elapsed: pausedTime });
+  emit(EVENTS.TIMER_PAUSED, { elapsed: pausedTime });
 }
 
 /**
@@ -183,7 +184,7 @@ export function resetTimer() {
     timerElement.textContent = formatTime(0);
   }
 
-  emit('timer:reset');
+  emit(EVENTS.TIMER_RESET);
 }
 
 /**

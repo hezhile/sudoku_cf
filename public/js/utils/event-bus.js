@@ -3,6 +3,8 @@
  * @module utils/event-bus
  */
 
+import { EVENTS } from '../config/events.js';
+
 /**
  * 事件处理器存储
  * @type {Object.<string, Function[]>}
@@ -150,44 +152,4 @@ export function getGlobalState(key) {
  * @readonly
  * @enum {string}
  */
-export const EventTypes = {
-  // 游戏事件
-  GAME_NEW: 'game:new',
-  GAME_RESET: 'game:reset',
-  GAME_STARTED: 'game:started',
-  GAME_COMPLETED: 'game:completed',
-  GAME_PAUSED: 'game:paused',
-  GAME_RESUMED: 'game:resumed',
-  GAME_STATE_SAVED: 'game:state:saved',
-  GAME_STATE_RESTORED: 'game:state:restored',
-
-  // 棋盘事件
-  BOARD_CHANGED: 'board:changed',
-  BOARD_COMPLETE: 'board:complete',
-  CELL_INPUT: 'cell:input',
-  CELL_FOCUS: 'cell:focus',
-
-  // 计时器事件
-  TIMER_STARTED: 'timer:started',
-  TIMER_STOPPED: 'timer:stopped',
-  TIMER_PAUSED: 'timer:paused',
-  TIMER_TICK: 'timer:tick',
-
-  // 存储事件
-  RECORD_SAVED: 'record:saved',
-  STORAGE_ERROR: 'storage:error',
-  SYNC_COMPLETED: 'sync:completed',
-  SYNC_FAILED: 'sync:failed',
-
-  // 认证事件
-  AUTH_LOGIN: 'auth:login',
-  AUTH_LOGOUT: 'auth:logout',
-  AUTH_SESSION_CHANGED: 'auth:session-changed',
-  AUTH_ERROR: 'auth:error',
-
-  // 错误事件
-  ERROR_GENERATION: 'error:generation',
-  ERROR_VALIDATION: 'error:validation',
-  ERROR_STORAGE: 'error:storage',
-  ERROR_NETWORK: 'error:network'
-};
+export const EventTypes = EVENTS;

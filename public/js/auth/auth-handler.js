@@ -6,6 +6,7 @@
 import { SUPABASE_CONFIG } from '../config/constants.js';
 import { emit } from '../utils/event-bus.js';
 import { showSuccess, showError, showWarning } from '../ui/toast.js';
+import { EVENTS } from '../config/events.js';
 
 // 获取全局i18n实例
 const getI18n = () => window.i18n;
@@ -68,7 +69,7 @@ export async function initAuth() {
     if (session) {
       currentSession = session;
       setLoggedInUI(session.user);
-      emit('auth:login', { user: session.user });
+      emit(EVENTS.AUTH_LOGIN, { user: session.user });
     } else {
       setLoggedOutUI();
     }
@@ -78,17 +79,17 @@ export async function initAuth() {
       if (session?.user) {
         currentSession = session;
         setLoggedInUI(session.user);
-        emit('auth:login', { user: session.user });
+        emit(EVENTS.AUTH_LOGIN, { user: session.user });
       } else {
         currentSession = null;
         setLoggedOutUI();
-        emit('auth:logout');
+        emit(EVENTS.AUTH_LOGOUT);
       }
     });
   } catch (error) {
     console.error('认证模块初始化失败:', error);
     showError(getI18n().t('errors.authFailed'));
-    emit('auth:error', { error });
+    emit(EVENTS.AUTH_ERROR, { error });
   }
 }
 
@@ -127,11 +128,11 @@ async function handleLogin() {
 
     showSuccess(getI18n().t('buttons.sent'));
     emailInput.value = '';
-    emit('auth:magic-link-sent', { email });
+    emit(EVENTS.AUTH_MAGIC_LINK_SENT, { email });
   } catch (error) {
     console.error('发送登录邮件失败:', error);
     showError(getI18n().t('errors.sendFailed') + (error.message || getI18n().t('errors.unknown')));
-    emit('auth:error', { error, operation: 'login' });
+    emit(EVENTS.AUTH_ERROR, { error, operation: 'login' });
   } finally {
     if (loginBtn) {
       loginBtn.disabled = false;
@@ -154,7 +155,7 @@ async function handleLogout() {
   } catch (error) {
     console.error('登出失败:', error);
     showError(getI18n().t('errors.logoutFailed'));
-    emit('auth:error', { error, operation: 'logout' });
+    emit(EVENTS.AUTH_ERROR, { error, operation: 'logout' });
   } finally {
     if (logoutBtn) {
       logoutBtn.disabled = false;
@@ -172,7 +173,7 @@ async function handleManualSync() {
   }
 
   try {
-    emit('sync:manual-trigger', { userId: currentSession.user.id });
+    emit(EVENTS.SYNC_MANUAL_TRIGGER, { userId: currentSession.user.id });
   } catch (error) {
     console.error('手动同步失败:', error);
     showError(getI18n().t('errors.syncFailed'));

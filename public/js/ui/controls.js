@@ -4,6 +4,8 @@
  */
 
 import { emit } from '../utils/event-bus.js';
+import { EVENTS } from '../config/events.js';
+import { initializationManager } from '../utils/InitializationManager.js';
 
 // 获取全局i18n实例
 const getI18n = () => window.i18n;
@@ -26,7 +28,7 @@ let clearRecordsBtn = null;
  */
 export function initializeControls() {
   // 防止重复初始化
-  if (window._controlsInitialized) {
+  if (initializationManager.isInitialized('controls')) {
     return;
   }
 
@@ -53,14 +55,14 @@ export function initializeControls() {
     difficultyEl.addEventListener('change', handleDifficultyChange);
   }
 
-  window._controlsInitialized = true;
+  initializationManager.markInitialized('controls');
 }
 
 /**
  * 处理新游戏按钮点击
  */
 function handleNewGame() {
-  emit('game:new', { difficulty: getDifficulty() });
+  emit(EVENTS.GAME_NEW, { difficulty: getDifficulty() });
 }
 
 /**
@@ -68,7 +70,7 @@ function handleNewGame() {
  */
 function handleReset() {
   if (confirm(getI18n().t('confirmReset'))) {
-    emit('game:reset');
+    emit(EVENTS.GAME_RESET);
   }
 }
 
@@ -77,7 +79,7 @@ function handleReset() {
  */
 function handleClearRecords() {
   if (confirm(getI18n().t('confirmClear'))) {
-    emit('records:clear');
+    emit(EVENTS.RECORDS_CLEAR);
   }
 }
 
@@ -85,7 +87,7 @@ function handleClearRecords() {
  * 处理难度改变
  */
 function handleDifficultyChange() {
-  emit('difficulty:changed', { difficulty: getDifficulty() });
+  emit(EVENTS.DIFFICULTY_CHANGED, { difficulty: getDifficulty() });
 }
 
 /**

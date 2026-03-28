@@ -6,6 +6,7 @@
 import { emit, getGlobalState } from '../utils/event-bus.js';
 import { detectConflicts } from '../core/validator.js';
 import { GRID_SIZE } from '../config/constants.js';
+import { EVENTS } from '../config/events.js';
 
 /**
  * 棋盘 DOM 元素
@@ -18,6 +19,9 @@ let boardElement = null;
  * @type {boolean[][]|null}
  */
 let givenMask = null;
+let cachedCells = [];
+let cachedInputs = [];
+let cachedPrefilledCells = [];
 
 /**
  * 初始化棋盘渲染器
@@ -45,6 +49,10 @@ export function renderBoard(board, given) {
   // 重置标志由事件总线管理，这里不需要设置
   givenMask = given;
   boardElement.innerHTML = '';
+  cachedCells = [];
+  cachedInputs = [];
+  cachedPrefilledCells = [];
+  const fragment = document.createDocumentFragment();
 
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
@@ -66,6 +74,7 @@ export function renderBoard(board, given) {
         cell.dataset.r = r;
         cell.dataset.c = c;
         cell.dataset.value = board[r][c] || ''; // 添加值到dataset
+        cachedPrefilledCells.push(cell);
       } else {
         // 可编辑格子
         const input = document.createElement('input');
@@ -82,11 +91,15 @@ export function renderBoard(board, given) {
         input.addEventListener('keydown', onCellKeyDown, { passive: true });
 
         cell.appendChild(input);
+        cachedInputs.push(input);
       }
 
-      boardElement.appendChild(cell);
+      cachedCells.push(cell);
+      fragment.appendChild(cell);
     }
   }
+
+  boardElement.appendChild(fragment);
 
   updateConflicts();
 }
@@ -121,7 +134,7 @@ function onCellInput(e) {
   updateConflicts();
 
   // 触发事件
-  emit('cell:input', {
+  emit(EVENTS.CELL_INPUT, {
     row: +input.dataset.r,
     col: +input.dataset.c,
     value: v ? parseInt(v) : 0
@@ -196,7 +209,7 @@ export function updateConflicts() {
   if (!boardElement) return;
 
   // 清除所有冲突样式
-  const cells = boardElement.querySelectorAll('.cell');
+  const cells = cachedCells.length > 0 ? cachedCells : Array.from(boardElement.querySelectorAll('.cell'));
   cells.forEach(c => c.classList.remove('conflict'));
 
   // 读取当前棋盘
@@ -226,7 +239,7 @@ export function readUserBoard() {
   if (!boardElement) return board;
 
   // 读取可编辑格子
-  const inputs = boardElement.querySelectorAll('input.cell-input');
+  const inputs = cachedInputs.length > 0 ? cachedInputs : Array.from(boardElement.querySelectorAll('input.cell-input'));
   inputs.forEach(inp => {
     const r = +inp.dataset.r;
     const c = +inp.dataset.c;
@@ -235,7 +248,7 @@ export function readUserBoard() {
   });
 
   // 读取预填格子（优先使用 dataset.value）
-  const prefilledCells = boardElement.querySelectorAll('.cell.prefilled');
+  const prefilledCells = cachedPrefilledCells.length > 0 ? cachedPrefilledCells : Array.from(boardElement.querySelectorAll('.cell.prefilled'));
   prefilledCells.forEach(cell => {
     const r = +cell.dataset.r;
     const c = +cell.dataset.c;
@@ -286,7 +299,7 @@ function checkAutoComplete() {
     const hasConflict = !!boardElement.querySelector('.conflict');
     if (!hasConflict) {
       // 触发完成事件
-      emit('board:complete', { board });
+      emit(EVENTS.BOARD_COMPLETE, { board });
     }
   }, 100); // 延迟100ms执行，避免重复触发
 }
@@ -298,6 +311,9 @@ export function clearBoard() {
   if (!boardElement) return;
   boardElement.innerHTML = '';
   givenMask = null;
+  cachedCells = [];
+  cachedInputs = [];
+  cachedPrefilledCells = [];
 }
 
 /**
