@@ -88,10 +88,12 @@ function handlePauseToggle() {
  */
 export function startTimer() {
   if (running) {
+    console.warn('[startTimer] Timer is already running, ignoring start request');
     return;
   }
 
   const initialElapsed = pausedTime;
+  console.log('[startTimer] Starting timer with initial elapsed:', initialElapsed);
   startTime = Date.now() - initialElapsed;
   pausedTime = 0;
 
@@ -116,6 +118,7 @@ export function startTimer() {
   }, TIMER_UPDATE_INTERVAL);
 
   running = true;
+  console.log('[startTimer] Timer started successfully');
   emit(EVENTS.TIMER_STARTED, { startTime });
 }
 
@@ -149,8 +152,12 @@ export function stopTimer() {
  * pauseTimer();
  */
 export function pauseTimer() {
-  if (!running) return;
+  if (!running) {
+    console.warn('[pauseTimer] Timer is not running, ignoring pause request');
+    return;
+  }
 
+  console.log('[pauseTimer] Pausing timer, current elapsed:', Date.now() - startTime);
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -158,6 +165,7 @@ export function pauseTimer() {
 
   pausedTime = Date.now() - startTime;
   running = false;
+  console.log('[pauseTimer] Timer paused, saved elapsed time:', pausedTime);
   emit(EVENTS.TIMER_PAUSED, { elapsed: pausedTime });
 }
 
@@ -167,7 +175,22 @@ export function pauseTimer() {
  * resumeTimer();
  */
 export function resumeTimer() {
-  if (running) return;
+  if (running) {
+    console.warn('resumeTimer called but timer is already running, ignoring');
+    return;
+  }
+
+  // 确保清理任何可能存在的旧定时器，防止状态不一致
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // 确保 running 状态为 false，以便 startTimer() 可以正常启动
+  if (running) {
+    running = false;
+  }
+
   startTimer();
 }
 
