@@ -1,25 +1,27 @@
 /**
- * i18n 辅助模块 - 统一访问全局 i18n 实例
- * 避免在各模块中重复定义 getI18n() 函数
+ * i18n 辅助模块 - 统一访问 i18n 实例
+ * 使用导入的实例而非全局变量，实现松耦合
  * @module utils/i18n-helper
  */
 
+import { i18nInstance } from '../i18n/i18n.js';
+
 /**
- * 获取全局 i18n 实例
- * 在 index.html 的脚本中，i18n.js 将 window.i18n 设置为全局 I18n 实例
+ * 获取 i18n 实例
+ * 从 i18n.js 导入的实例获取，避免依赖全局变量
  * @returns {Object} i18n 实例，包含 t(), setLanguage() 等方法
  * @throws {Error} 如果 i18n 未正确初始化
  * @example
  * import { getI18n } from '../utils/i18n-helper.js';
- * 
+ *
  * const i18n = getI18n();
  * const greeting = i18n.t('greeting');
  */
 export function getI18n() {
-  if (!window.i18n) {
+  if (!i18nInstance) {
     throw new Error('i18n 系统未初始化。请确保在 init() 之前已加载 i18n.js');
   }
-  return window.i18n;
+  return i18nInstance;
 }
 
 /**
@@ -31,7 +33,7 @@ export function getI18n() {
  * }
  */
 export function isI18nReady() {
-  return typeof window.i18n !== 'undefined' && window.i18n !== null;
+  return typeof i18nInstance !== 'undefined' && i18nInstance !== null;
 }
 
 /**

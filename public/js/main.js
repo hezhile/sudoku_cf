@@ -30,6 +30,7 @@ import { on, emit, setGlobalState, getGlobalState } from './utils/event-bus.js';
 import { formatTime } from './utils/helpers.js';
 import { createListenerGroup } from './utils/listener-manager.js';
 import { EVENTS } from './config/events.js';
+import { i18nInstance } from './i18n/i18n.js';
 
 // 配置
 import { DIFFICULTY_HOLES } from './config/constants.js';
@@ -51,8 +52,8 @@ const SAVE_INTERVAL = 5000; // 每5秒保存一次
  */
 async function init() {
   try {
-    // 设置全局i18n引用（在初始化前就设置）
-    i18n = window.i18n;
+    // 使用导入的 i18n 实例（不再依赖全局变量）
+    i18n = i18nInstance;
 
     // 初始化多语言系统（优先初始化）
     await initializeI18n();

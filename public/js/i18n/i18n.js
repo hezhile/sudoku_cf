@@ -444,24 +444,27 @@ export class I18n {
   }
 }
 
-// 创建全局实例
-window.i18n = new I18n();
+// 创建并导出 i18n 实例
+export const i18nInstance = new I18n();
+
+// 为了向后兼容，暂时保留全局实例
+window.i18n = i18nInstance;
 
 // 等待语言初始化完成后再加载翻译和更新DOM
 const initializeAfterLanguageDetection = async () => {
   try {
     // 等待语言检测完成
-    await window.i18n._initializationPromise;
+    await i18nInstance._initializationPromise;
 
     // 加载对应语言的翻译
-    await window.i18n.loadTranslations(window.i18n.currentLang);
-    window.i18n.updateDOM();
+    await i18nInstance.loadTranslations(i18nInstance.currentLang);
+    i18nInstance.updateDOM();
 
     // Initialize SEO metadata
-    window.i18n.updateSEOMetadata();
-    window.i18n.updateHreflangTags();
-    window.i18n.updateCanonicalURL();
-    window.i18n.injectStructuredData();
+    i18nInstance.updateSEOMetadata();
+    i18nInstance.updateHreflangTags();
+    i18nInstance.updateCanonicalURL();
+    i18nInstance.injectStructuredData();
   } catch (error) {
     console.error('Failed to initialize i18n:', error);
   }
