@@ -24,6 +24,7 @@ let cachedInputs = [];
 let cachedPrefilledCells = [];
 let cachedInputGrid = createInputGrid();
 let checkCompleteTimeout = null;
+let filledCellCount = 0;
 
 function createInputGrid() {
   return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
@@ -59,6 +60,7 @@ export function renderBoard(board, given) {
   cachedInputs = [];
   cachedPrefilledCells = [];
   cachedInputGrid = createInputGrid();
+  filledCellCount = 0;
   if (checkCompleteTimeout) {
     clearTimeout(checkCompleteTimeout);
     checkCompleteTimeout = null;
@@ -78,6 +80,10 @@ export function renderBoard(board, given) {
         cell.dataset.c = c;
         cell.dataset.value = board[r][c] || ''; // 添加值到dataset
         cachedPrefilledCells.push(cell);
+        // 计算已填格子数量
+        if (board[r][c] && board[r][c] !== 0) {
+          filledCellCount++;
+        }
       } else {
         // 可编辑格子
         const input = document.createElement('input');
@@ -132,6 +138,18 @@ function onCellInput(e) {
   const raw = input.value.replace(/[^\d]/g, '');
   let v = raw.slice(0, 1);
   if (v === '0') v = '';
+
+  // 更新已填格子计数
+  const oldValue = input.dataset.oldValue || '';
+  if (oldValue && !v) {
+    // 从有值变为空值
+    filledCellCount--;
+  } else if (!oldValue && v) {
+    // 从空值变为有值
+    filledCellCount++;
+  }
+  input.dataset.oldValue = v;
+
   input.value = v;
 
   // 更新冲突高亮
@@ -266,7 +284,7 @@ export function readUserBoard() {
 }
 
 /**
- * 检查是否自动完成
+ * 检查是否自动完成（优化版：使用计数器避免遍历）
  */
 function checkAutoComplete() {
   const isResetting = getGlobalState('isResetting');
@@ -287,21 +305,16 @@ function checkAutoComplete() {
   }
 
   checkCompleteTimeout = setTimeout(() => {
-    const board = readUserBoard();
-
-    // 检查是否全部填满
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        if (board[r][c] === 0) {
-          return;
-        }
-      }
+    // 使用计数器快速检查是否全部填满（避免遍历81个格子）
+    if (filledCellCount < 81) {
+      return;
     }
 
     // 检查是否有冲突
     const hasConflict = !!boardElement.querySelector('.conflict');
     if (!hasConflict) {
-      // 触发完成事件
+      // 触发完成事件（只在真正需要时读取棋盘）
+      const board = readUserBoard();
       emit(EVENTS.BOARD_COMPLETE, { board });
     }
     checkCompleteTimeout = null;
@@ -319,6 +332,7 @@ export function clearBoard() {
   cachedInputs = [];
   cachedPrefilledCells = [];
   cachedInputGrid = createInputGrid();
+  filledCellCount = 0;
   if (checkCompleteTimeout) {
     clearTimeout(checkCompleteTimeout);
     checkCompleteTimeout = null;
@@ -378,4 +392,29 @@ export function clearHighlight(className = 'highlight') {
 
   const cells = boardElement.querySelectorAll('.cell');
   cells.forEach(cell => cell.classList.remove(className));
+}
+
+/**
+ * 清理棋盘渲染器资源
+ * 应在页面卸载或组件销毁时调用，防止内存泄漏
+ * @example
+ * window.addEventListener('beforeunload', cleanupBoardRenderer);
+ */
+export function cleanupBoardRenderer() {
+  // 清理 timeout
+  if (checkCompleteTimeout) {
+    clearTimeout(checkCompleteTimeout);
+    checkCompleteTimeout = null;
+  }
+
+  // 清理缓存
+  cachedCells = [];
+  cachedInputs = [];
+  cachedPrefilledCells = [];
+  cachedInputGrid = createInputGrid();
+  filledCellCount = 0;
+
+  // 清理 DOM 引用
+  boardElement = null;
+  givenMask = null;
 }

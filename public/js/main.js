@@ -10,7 +10,7 @@ import { validateSolution } from './core/validator.js';
 import { gameStateManager } from './core/game-state-manager.js';
 
 // UI 模块
-import { initBoardRenderer, renderBoard, readUserBoard } from './ui/board-renderer.js';
+import { initBoardRenderer, renderBoard, readUserBoard, cleanupBoardRenderer } from './ui/board-renderer.js';
 import { initTimer, startTimer, startTimerWithElapsed, stopTimer, resetTimer, pauseTimer, resumeTimer, getElapsedTime, setTimerDisplay, updatePauseButton, setElapsedTime } from './ui/timer.js';
 import { showSuccess, showError, showWarning, showToast } from './ui/toast.js';
 import { initializeControls, getDifficulty, setLoading, disableControls, enableControls, setDifficulty } from './ui/controls.js';
@@ -555,3 +555,10 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+/**
+ * 页面卸载时清理资源，防止内存泄漏
+ */
+window.addEventListener('beforeunload', () => {
+  cleanupBoardRenderer();
+});
