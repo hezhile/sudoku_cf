@@ -31,6 +31,7 @@ let loginBtn = null;
 let logoutBtn = null;
 let userInfo = null;
 let syncBtn = null;
+let emailValidationMessage = null;
 
 /**
  * 初始化认证模块
@@ -52,10 +53,14 @@ export async function initAuth() {
     logoutBtn = document.getElementById('logoutBtn');
     userInfo = document.getElementById('userInfo');
     syncBtn = document.getElementById('syncBtn');
+    emailValidationMessage = document.getElementById('emailValidationMessage');
 
     // 绑定事件
     if (loginBtn) {
       loginBtn.addEventListener('click', handleLogin);
+    }
+    if (emailInput) {
+      emailInput.addEventListener('input', clearEmailValidation);
     }
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleLogout);
@@ -99,16 +104,17 @@ export async function initAuth() {
 async function handleLogin() {
   if (!emailInput) return;
 
+  clearEmailValidation();
   const email = emailInput.value.trim();
   if (!email) {
-    showWarning(getI18n().t('errors.emptyEmail'));
+    reportEmailValidation('errors.emptyEmail');
     return;
   }
 
   // 简单的邮箱格式验证
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    showWarning(getI18n().t('errors.invalidEmail'));
+    reportEmailValidation('errors.invalidEmail');
     return;
   }
 
@@ -221,6 +227,26 @@ function setLoggedOutUI() {
   if (syncBtn) {
     syncBtn.style.display = 'none';
   }
+}
+
+function clearEmailValidation() {
+  if (!emailInput) return;
+
+  emailInput.setCustomValidity('');
+  if (emailValidationMessage) {
+    emailValidationMessage.textContent = '';
+  }
+}
+
+function reportEmailValidation(key) {
+  if (!emailInput) return;
+
+  const message = getI18n().t(key);
+  emailInput.setCustomValidity(message);
+  if (emailValidationMessage) {
+    emailValidationMessage.textContent = message;
+  }
+  emailInput.reportValidity();
 }
 
 /**

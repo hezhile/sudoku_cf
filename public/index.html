@@ -43,8 +43,8 @@
   <div class="main-container">
 
     <!-- 语言选择器 -->
-    <div class="language-selector" style="position: absolute; top: 10px; right: 10px;">
-      <select id="language-selector" class="form-control" style="min-width: 100px;">
+    <div class="language-selector">
+      <select id="language-selector" class="form-control select-compact" data-i18n-aria-label="labels.languageSelector">
         <option value="zh-CN">🇨🇳</option>
         <option value="en-US" selected>🇬🇧</option>
         <option value="ja-JP">🇯🇵</option>
@@ -55,17 +55,18 @@
     <div class="header-section">
       <h1 data-i18n="gameTitle">数独 Sudoku</h1>
       <div id="loginArea" class="login-area">
-        <input id="emailInput" class="form-control" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="输入邮箱接收登录链接">
+        <input id="emailInput" class="form-control" type="email" required aria-describedby="emailValidationMessage" data-i18n-placeholder="emailPlaceholder" data-i18n-aria-label="labels.emailInput" placeholder="输入邮箱接收登录链接">
         <button id="loginBtn" class="btn btn-primary" data-i18n="login">登录</button>
+        <span id="emailValidationMessage" class="sr-only" aria-live="polite"></span>
 
-        <span id="userInfo" class="small" style="margin-left:10px;"></span>
-        <button id="logoutBtn" class="logout-link" style="display:none;" data-i18n="logout">[登出]</button>
+        <span id="userInfo" class="small login-status"></span>
+        <button id="logoutBtn" class="logout-link is-hidden" data-i18n="logout">[登出]</button>
       </div>
     </div>
 
     <!-- 游戏控制 + 计时器 -->
     <div class="controls-bar">
-      <select id="difficulty" class="form-control" style="min-width: 100px;">
+      <select id="difficulty" class="form-control select-compact" data-i18n-aria-label="labels.difficultySelector">
         <option value="easy" data-i18n="difficulty.easy">简单</option>
         <option value="medium" selected data-i18n="difficulty.medium">中等</option>
         <option value="hard" data-i18n="difficulty.hard">困难</option>
@@ -92,7 +93,7 @@
       <div class="record-header">
         <strong data-i18n="localRecords">本机记录</strong>
         <div id="recordButtons">
-          <button id="syncBtn" class="btn btn-sm" style="display:none;" data-i18n="uploadSync">上传同步</button>
+          <button id="syncBtn" class="btn btn-sm is-hidden" data-i18n="uploadSync">上传同步</button>
           <button id="clearRecords" class="btn btn-sm btn-danger" data-i18n="clearRecords">清除记录</button>
         </div>
       </div>

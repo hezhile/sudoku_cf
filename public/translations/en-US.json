@@ -88,5 +88,10 @@
     "title": "Game Paused",
     "resume": "↩️ Resume"
   },
+  "labels": {
+    "languageSelector": "Select language",
+    "difficultySelector": "Select difficulty",
+    "emailInput": "Email address for login"
+  },
   "globalGames": "Games Created"
 }

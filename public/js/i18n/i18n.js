@@ -253,40 +253,42 @@ export class I18n {
     console.log('updateDOM called, currentLang:', this.currentLang);
     console.log('Available translations:', Object.keys(this.translations));
 
-    // 更新所有带有 data-i18n 属性的元素
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-      const key = element.getAttribute('data-i18n');
-      console.log('Translating key:', key);
-      const translation = this.t(key);
-      if (translation) {
-        element.textContent = translation;
-      }
-    });
+    const translatableElements = document.querySelectorAll(
+      '[data-i18n], [data-i18n-placeholder], [data-i18n-title], [data-i18n-aria-label]'
+    );
 
-    // 更新 placeholder
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-      const key = element.getAttribute('data-i18n-placeholder');
-      const translation = this.t(key);
-      if (translation) {
-        element.placeholder = translation;
+    translatableElements.forEach(element => {
+      const textKey = element.getAttribute('data-i18n');
+      if (textKey) {
+        console.log('Translating key:', textKey);
+        const translation = this.t(textKey);
+        if (translation) {
+          element.textContent = translation;
+        }
       }
-    });
 
-    // 更新 title
-    document.querySelectorAll('[data-i18n-title]').forEach(element => {
-      const key = element.getAttribute('data-i18n-title');
-      const translation = this.t(key);
-      if (translation) {
-        element.title = translation;
+      const placeholderKey = element.getAttribute('data-i18n-placeholder');
+      if (placeholderKey) {
+        const translation = this.t(placeholderKey);
+        if (translation) {
+          element.placeholder = translation;
+        }
       }
-    });
 
-    // 更新 aria-label
-    document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
-      const key = element.getAttribute('data-i18n-aria-label');
-      const translation = this.t(key);
-      if (translation) {
-        element.setAttribute('aria-label', translation);
+      const titleKey = element.getAttribute('data-i18n-title');
+      if (titleKey) {
+        const translation = this.t(titleKey);
+        if (translation) {
+          element.title = translation;
+        }
+      }
+
+      const ariaLabelKey = element.getAttribute('data-i18n-aria-label');
+      if (ariaLabelKey) {
+        const translation = this.t(ariaLabelKey);
+        if (translation) {
+          element.setAttribute('aria-label', translation);
+        }
       }
     });
 

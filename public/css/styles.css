@@ -92,6 +92,24 @@ h1 {
   flex-wrap: wrap;
 }
 
+.login-status {
+  margin-left: 10px;
+}
+
+.language-selector {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.select-compact {
+  min-width: 100px;
+}
+
+.is-hidden {
+  display: none;
+}
+
 /* 通用控件样式 (Input, Select, Button) */
 .form-control, .btn {
   height: 36px; /* 统一高度 */
@@ -116,6 +134,14 @@ h1 {
   outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+}
+
+.form-control:focus-visible,
+.btn:focus-visible,
+.logout-link:focus-visible,
+.pause-btn:focus-visible {
+  outline: 3px solid rgba(9, 105, 218, 0.35);
+  outline-offset: 2px;
 }
 
 .btn {
@@ -186,7 +212,7 @@ h1 {
 
 /* 计时器区域（带暂停按钮）*/
 #timerArea.timer-area-with-pause {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
@@ -252,11 +278,11 @@ input.cell-input {
   font-weight: normal;
 }
 
-.conflict {
-  background: var(--conflict-bg) !important;
-  color: var(--conflict-text) !important;
+.cell.conflict {
+  background: var(--conflict-bg);
+  color: var(--conflict-text);
 }
-.conflict input { color: var(--conflict-text) !important; }
+.cell.conflict input { color: var(--conflict-text); }
 
 /* 记录区域 */
 #records, .changelog-details {
@@ -452,6 +478,18 @@ input.cell-input {
 #language-selector {
   width: 100px; /* 覆盖 .form-control 的 200px 默认宽度 */
   min-width: 100px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 暂停遮罩样式 */

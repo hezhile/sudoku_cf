@@ -15,6 +15,7 @@ import { initTimer, startTimer, startTimerWithElapsed, stopTimer, resetTimer, pa
 import { showSuccess, showError, showWarning, showToast } from './ui/toast.js';
 import { initializeControls, getDifficulty, setLoading, disableControls, enableControls, setDifficulty } from './ui/controls.js';
 import { initPauseOverlay, showPauseOverlay as showPauseOverlayDirect, hidePauseOverlay } from './ui/pause-overlay.js';
+import { renderRecordsList } from './ui/records.js';
 
 // 存储模块
 import { saveRecord, loadRecords, getAllStats, clearRecords } from './storage/local-storage.js';
@@ -239,7 +240,11 @@ function handleReset() {
 async function initializeI18n() {
   try {
     // 使用全局的 i18n 实例
-    const globalI18n = window.i18n;
+    const globalI18n = i18n;
+
+    if (!globalI18n) {
+      throw new Error('i18n instance is not available');
+    }
 
     // 等待语言检测和初始化完成
     if (globalI18n._initializationPromise) {
@@ -278,30 +283,23 @@ async function initializeI18n() {
  * 更新语言选择器
  */
 function updateLanguageSelector() {
-  const globalI18n = window.i18n;
   const languageSelector = document.getElementById('language-selector');
 
-  if (languageSelector) {
-    languageSelector.value = globalI18n.currentLang;
-
-    // 标记是否为自动检测
-    const isAutoDetected = !globalI18n.getSavedLanguage();
-    if (isAutoDetected) {
-      languageSelector.title = `自动检测: ${globalI18n.currentLang}`;
-    } else {
-      languageSelector.title = '';
-    }
-
-    // 清理旧的监听器
-    languageListeners.clear();
-
-    // 添加新的语言切换监听器
-    languageListeners.add(languageSelector, 'change', async (e) => {
-      const newLang = e.target.value;
-      console.log('Language changed to:', newLang);
-      await globalI18n.setLanguage(newLang);
-    });
+  if (!languageSelector || !i18n) {
+    return;
   }
+
+  languageSelector.value = i18n.currentLang;
+
+  const isAutoDetected = !i18n.getSavedLanguage();
+  languageSelector.title = isAutoDetected ? `自动检测: ${i18n.currentLang}` : '';
+
+  languageListeners.clear();
+  languageListeners.add(languageSelector, 'change', async (e) => {
+    const newLang = e.target.value;
+    console.log('Language changed to:', newLang);
+    await i18n.setLanguage(newLang);
+  });
 }
 
 /**
@@ -546,39 +544,7 @@ function renderRecords() {
   const recordsList = document.getElementById('recordsList');
 
   if (!recordsList) return;
-
-  // 获取翻译，如果未加载则使用默认值
-  const getTranslation = (key, fallback) => {
-    if (window.i18n && window.i18n.translations && window.i18n.translations[window.i18n.currentLang]) {
-      return window.i18n.t(key);
-    }
-    // Fallback values for English
-    const fallbacks = {
-      'difficulty.easy': 'Easy',
-      'difficulty.medium': 'Medium',
-      'difficulty.hard': 'Hard',
-      'difficulty.expert': 'Expert',
-      'records.recent': 'Recent: {{time}}',
-      'records.best': 'Best: {{time}}'
-    };
-    return fallbacks[key] || fallback || key;
-  };
-
-  const html = ['easy', 'medium', 'hard', 'expert'].map(diff => {
-    const stat = stats[diff];
-    const bestStr = stat.best ? formatTime(stat.best) : '—';
-    const lastStr = stat.lastTime ? formatTime(stat.lastTime) : '—';
-    const label = getTranslation(`difficulty.${diff}`);
-
-    return `
-      <div class="record-row">
-        <div>${label} <span class="small">${getTranslation('records.recent').replace('{{time}}', lastStr)}</span></div>
-        <div>${getTranslation('records.best').replace('{{time}}', bestStr)}</div>
-      </div>
-    `;
-  }).join('');
-
-  recordsList.innerHTML = html;
+  renderRecordsList(recordsList, stats, i18n);
 }
 
 /**
@@ -588,15 +554,4 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
-}
-
-// 导出供调试使用
-if (typeof window !== 'undefined') {
-  window.sudokuDebug = {
-    getSolution: () => gameStateManager.getSnapshot().solution,
-    getPuzzle: () => gameStateManager.getSnapshot().puzzle,
-    getGivenMask: () => gameStateManager.getSnapshot().givenMask,
-    readUserBoard,
-    emit
-  };
 }

@@ -22,6 +22,12 @@ let givenMask = null;
 let cachedCells = [];
 let cachedInputs = [];
 let cachedPrefilledCells = [];
+let cachedInputGrid = createInputGrid();
+let checkCompleteTimeout = null;
+
+function createInputGrid() {
+  return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
+}
 
 /**
  * 初始化棋盘渲染器
@@ -52,20 +58,17 @@ export function renderBoard(board, given) {
   cachedCells = [];
   cachedInputs = [];
   cachedPrefilledCells = [];
+  cachedInputGrid = createInputGrid();
+  if (checkCompleteTimeout) {
+    clearTimeout(checkCompleteTimeout);
+    checkCompleteTimeout = null;
+  }
   const fragment = document.createDocumentFragment();
 
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
-
-      // 添加加粗边框（3x3 宫格分界）
-      if (r === 2 || r === 5) {
-        cell.style.borderBottom = '3px solid var(--border-thick)';
-      }
-      if (c === 2 || c === 5) {
-        cell.style.borderRight = '3px solid var(--border-thick)';
-      }
 
       if (given[r][c]) {
         // 预填格子
@@ -92,6 +95,7 @@ export function renderBoard(board, given) {
 
         cell.appendChild(input);
         cachedInputs.push(input);
+        cachedInputGrid[r][c] = input;
       }
 
       cachedCells.push(cell);
@@ -184,8 +188,7 @@ function moveFocus(direction, input) {
 
   // 查找下一个可编辑的格子
   for (let i = 0; i < 81; i++) {
-    const selector = `input.cell-input[data-r="${nr}"][data-c="${nc}"]`;
-    const next = boardElement.querySelector(selector);
+    const next = cachedInputGrid[nr]?.[nc];
     if (next) {
       next.focus();
       break;
@@ -279,11 +282,11 @@ function checkAutoComplete() {
   }
 
   // 添加防抖，防止短时间内多次调用
-  if (window._checkCompleteTimeout) {
-    clearTimeout(window._checkCompleteTimeout);
+  if (checkCompleteTimeout) {
+    clearTimeout(checkCompleteTimeout);
   }
 
-  window._checkCompleteTimeout = setTimeout(() => {
+  checkCompleteTimeout = setTimeout(() => {
     const board = readUserBoard();
 
     // 检查是否全部填满
@@ -301,6 +304,7 @@ function checkAutoComplete() {
       // 触发完成事件
       emit(EVENTS.BOARD_COMPLETE, { board });
     }
+    checkCompleteTimeout = null;
   }, 100); // 延迟100ms执行，避免重复触发
 }
 
@@ -314,6 +318,11 @@ export function clearBoard() {
   cachedCells = [];
   cachedInputs = [];
   cachedPrefilledCells = [];
+  cachedInputGrid = createInputGrid();
+  if (checkCompleteTimeout) {
+    clearTimeout(checkCompleteTimeout);
+    checkCompleteTimeout = null;
+  }
 }
 
 /**
@@ -336,8 +345,7 @@ export function getCellValue(row, col) {
 export function setCellValue(row, col, value) {
   if (!boardElement) return;
 
-  const selector = `input.cell-input[data-r="${row}"][data-c="${col}"]`;
-  const input = boardElement.querySelector(selector);
+  const input = cachedInputGrid[row]?.[col];
   if (input) {
     input.value = value > 0 ? value : '';
     updateConflicts();
