@@ -4,7 +4,7 @@
  */
 
 // 核心模块
-import { generateFullBoard, digHolesFromSolution } from './core/sudoku-engine.js';
+import { generateFullBoard } from './core/sudoku-engine.js';
 import { digHolesWithValidation } from './core/solver.js';
 import { validateSolution } from './core/validator.js';
 import { gameStateManager } from './core/game-state-manager.js';
@@ -27,7 +27,7 @@ import { initAuth } from './auth/auth-handler.js';
 // 工具模块
 import { on, emit, setGlobalState, getGlobalState } from './utils/event-bus.js';
 import { formatTime } from './utils/helpers.js';
-import { addListener, removeListener, createListenerGroup } from './utils/listener-manager.js';
+import { createListenerGroup } from './utils/listener-manager.js';
 import { EVENTS } from './config/events.js';
 
 // 配置
@@ -120,15 +120,16 @@ function registerEventHandlers() {
   // 游戏事件
   on(EVENTS.GAME_NEW, handleNewGame);
   on(EVENTS.GAME_RESET, handleReset);
-  on(EVENTS.GAME_PAUSED, handlePause);
-  on(EVENTS.GAME_RESUMED, handleResume);
+  on(EVENTS.GAME_PAUSE_REQUEST, handlePause);
+  on(EVENTS.GAME_RESUME_REQUEST, handleResume);
   on(EVENTS.BOARD_COMPLETE, handleBoardComplete);
 
   // 计时器事件（用于自动保存）
   on(EVENTS.TIMER_TICK, handleTimerTick);
 
   // 记录事件
-  on(EVENTS.RECORDS_CLEAR, handleClearRecords);
+  on(EVENTS.RECORDS_CLEAR, handleClearRecordsRequest);
+  on(EVENTS.RECORDS_CLEARED, handleRecordsCleared);
 
   // 认证事件（可选的额外处理）
   on(EVENTS.AUTH_LOGIN, ({ user }) => {
@@ -371,11 +372,11 @@ async function handleBoardComplete() {
 /**
  * 处理清除记录
  */
-function handleClearRecords() {
-  // 清理所有UI监听器
-  uiListeners.clear();
-  languageListeners.clear();
+function handleClearRecordsRequest() {
+  clearRecords();
+}
 
+function handleRecordsCleared() {
   renderRecords();
   showToast(i18n.t('status.recordsCleared'), 'info');
 }
@@ -471,7 +472,7 @@ function handleTimerTick({ elapsed }) {
       puzzle,
       givenMask,
       currentBoard,
-      elapsed,
+      elapsedTime: elapsed,
       difficulty: getDifficulty(),
       isPaused: false
     });
@@ -508,12 +509,14 @@ async function checkAndRestoreGameState() {
   // 设置难度
   setDifficulty(savedState.difficulty);
 
+  const elapsedTime = savedState.elapsedTime;
+
   if (savedState.isPaused) {
     // 游戏处于暂停状态
     setGlobalState('isPaused', true);
 
     // 设置计时器显示
-    setElapsedTime(savedState.elapsedTime);
+    setElapsedTime(elapsedTime);
 
     // 初始化并显示暂停遮罩
     initPauseOverlay();
@@ -526,7 +529,7 @@ async function checkAndRestoreGameState() {
     updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
   } else {
     // 游戏处于进行中状态 - 从保存的时间继续计时
-    startTimerWithElapsed(savedState.elapsedTime);
+    startTimerWithElapsed(elapsedTime);
 
     // 更新暂停按钮
     updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);

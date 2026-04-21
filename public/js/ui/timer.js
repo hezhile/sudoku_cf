@@ -75,9 +75,9 @@ function createPauseButton() {
 function handlePauseToggle() {
   const isPaused = getGlobalState('isPaused');
   if (isPaused) {
-    emit(EVENTS.GAME_RESUMED);
+    emit(EVENTS.GAME_RESUME_REQUEST);
   } else {
-    emit(EVENTS.GAME_PAUSED);
+    emit(EVENTS.GAME_PAUSE_REQUEST);
   }
 }
 
@@ -91,7 +91,8 @@ export function startTimer() {
     return;
   }
 
-  startTime = Date.now() - pausedTime;
+  const initialElapsed = pausedTime;
+  startTime = Date.now() - initialElapsed;
   pausedTime = 0;
 
   if (!timerElement) {
@@ -99,7 +100,7 @@ export function startTimer() {
   }
 
   if (timerElement) {
-    timerElement.textContent = formatTime(0);
+    timerElement.textContent = formatTime(initialElapsed);
   }
 
   if (timerInterval) {
@@ -196,7 +197,7 @@ export function resetTimer() {
  */
 export function getElapsedTime() {
   if (!startTime) {
-    return 0;
+    return pausedTime;
   }
   if (running) {
     return Date.now() - startTime;
@@ -268,6 +269,12 @@ export function hasPauseButton() {
  * @param {number} elapsed - 已用时间（毫秒）
  */
 export function setElapsedTime(elapsed) {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  running = false;
+  startTime = null;
   pausedTime = elapsed;
   if (timerElement) {
     timerElement.textContent = formatTime(elapsed);

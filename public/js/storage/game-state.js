@@ -7,6 +7,21 @@
 import { GAME_STATE_STORAGE_KEY } from '../config/constants.js';
 import { StorageAdapter } from './StorageAdapter.js';
 
+export function normalizeGameState(gameState) {
+  if (!gameState || typeof gameState !== 'object') {
+    return null;
+  }
+
+  const { elapsed, elapsedTime, ...rest } = gameState;
+
+  return {
+    ...rest,
+    elapsedTime: typeof elapsedTime === 'number'
+      ? elapsedTime
+      : (typeof elapsed === 'number' ? elapsed : 0)
+  };
+}
+
 /**
  * 保存当前游戏状态到 localStorage
  * @param {Object} gameState - 游戏状态对象
@@ -20,8 +35,13 @@ import { StorageAdapter } from './StorageAdapter.js';
  */
 export function saveGameState(gameState) {
   try {
+    const normalizedState = normalizeGameState(gameState);
+    if (!normalizedState) {
+      return;
+    }
+
     const state = {
-      ...gameState,
+      ...normalizedState,
       savedAt: Date.now()
     };
     localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(state));
@@ -38,7 +58,7 @@ export function loadGameState() {
   try {
     const raw = localStorage.getItem(GAME_STATE_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return normalizeGameState(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load game state:', error);
     return null;

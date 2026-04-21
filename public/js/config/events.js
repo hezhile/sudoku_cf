@@ -15,6 +15,8 @@ export const EVENTS = {
   GAME_NEW: 'game:new',
   /** 游戏重置 */
   GAME_RESET: 'game:reset',
+  GAME_PAUSE_REQUEST: 'game:pause:request',
+  GAME_RESUME_REQUEST: 'game:resume:request',
   /** 游戏已启动（棋盘已生成） */
   GAME_STARTED: 'game:started',
   /** 游戏完成 */
