@@ -384,14 +384,9 @@ function handleRecordsCleared() {
  * 处理暂停
  */
 function handlePause() {
-  console.log('[handlePause] Pause handler called');
   const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
-  if (!puzzle || getGlobalState('isPaused')) {
-    console.log('[handlePause] Cannot pause - missing puzzle or already paused');
-    return;
-  }
+  if (!puzzle || getGlobalState('isPaused')) return;
 
-  console.log('[handlePause] Pausing game...');
   // 设置暂停状态
   setGlobalState('isPaused', true);
 
@@ -419,7 +414,6 @@ function handlePause() {
   // 更新暂停按钮
   updatePauseButton(true, i18n ? i18n.t.bind(i18n) : null);
 
-  console.log('[handlePause] Game paused successfully');
   emit(EVENTS.GAME_PAUSED);
 }
 
@@ -427,17 +421,9 @@ function handlePause() {
  * 处理恢复
  */
 function handleResume() {
-  console.log('[handleResume] Resume handler called');
   const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
-  const isPaused = getGlobalState('isPaused');
-  console.log('[handleResume] State check:', { hasPuzzle: !!puzzle, isPaused });
+  if (!puzzle || !getGlobalState('isPaused')) return;
 
-  if (!puzzle || !isPaused) {
-    console.log('[handleResume] Cannot resume - missing puzzle or not paused');
-    return;
-  }
-
-  console.log('[handleResume] Resuming game...');
   // 清除暂停状态
   setGlobalState('isPaused', false);
 
@@ -445,7 +431,6 @@ function handleResume() {
   hidePauseOverlay();
 
   // 恢复计时器
-  console.log('[handleResume] Calling resumeTimer()');
   resumeTimer();
 
   // 启用控件
@@ -466,7 +451,6 @@ function handleResume() {
     isPaused: false
   });
 
-  console.log('[handleResume] Game resumed successfully');
   emit(EVENTS.GAME_RESUMED);
 }
 

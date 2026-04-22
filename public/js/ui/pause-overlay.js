@@ -99,6 +99,5 @@ export function updateOverlayTranslations(t) {
  * 处理恢复按钮点击
  */
 function handleResume() {
-  console.log('[pause-overlay] Resume button clicked, emitting GAME_RESUME_REQUEST');
   emit(EVENTS.GAME_RESUME_REQUEST);
 }
