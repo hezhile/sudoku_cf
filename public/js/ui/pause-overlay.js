@@ -23,30 +23,30 @@ export function initPauseOverlay(boardWrapperSelector = '.board-wrapper') {
     return;
   }
 
-  // 创建遮罩元素
-  overlayElement = document.createElement('div');
-  overlayElement.className = 'pause-overlay';
-  overlayElement.innerHTML = `
-    <div class="pause-content">
-      <div class="pause-icon">⏸️</div>
-      <h2 class="pause-title" data-i18n="pause.title">游戏已暂停</h2>
-      <button id="resumeBtn" class="btn btn-primary btn-lg" data-i18n="pause.resume">
-        ↩️ 继续游戏
-      </button>
-    </div>
-  `;
-
-  // 初始隐藏
-  overlayElement.style.display = 'none';
-
-  // 绑定恢复按钮事件
-  resumeButton = overlayElement.querySelector('#resumeBtn');
-  if (resumeButton) {
-    resumeButton.addEventListener('click', handleResume);
+  if (!overlayElement) {
+    overlayElement = document.getElementById('pauseOverlay') || document.createElement('div');
+    overlayElement.id = 'pauseOverlay';
+    overlayElement.className = 'pause-overlay';
+    overlayElement.innerHTML = `
+      <div class="pause-content pause-overlay-content">
+        <div class="pause-icon">⏸️</div>
+        <h2 class="pause-title" data-i18n="pause.title">游戏已暂停</h2>
+        <button id="resumeBtn" class="btn btn-primary btn-lg" data-i18n="pause.resume">
+          ▶️ 继续游戏
+        </button>
+      </div>
+    `;
+    overlayElement.style.display = 'none';
   }
 
-  // 插入到棋盘容器中
-  boardWrapper.appendChild(overlayElement);
+  if (overlayElement.parentElement !== boardWrapper) {
+    boardWrapper.appendChild(overlayElement);
+  }
+
+  resumeButton = overlayElement.querySelector('#resumeBtn');
+  if (resumeButton) {
+    resumeButton.onclick = handleResume;
+  }
 }
 
 /**
@@ -74,7 +74,7 @@ export function hidePauseOverlay() {
  * @returns {boolean} 遮罩是否可见
  */
 export function isOverlayVisible() {
-  return overlayElement && overlayElement.style.display === 'flex';
+  return !!overlayElement && overlayElement.style.display === 'flex';
 }
 
 /**

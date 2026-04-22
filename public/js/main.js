@@ -61,14 +61,16 @@ async function init() {
     // 初始化各个模块
     initBoardRenderer('#board');
     initTimer('#timer');
+    initPauseOverlay();
     initializeControls();
+
+    // 注册事件处理器
+    registerEventHandlers();
+
     initSyncModule();
 
     // 初始化认证（异步）
     await initAuth();
-
-    // 注册事件处理器
-    registerEventHandlers();
 
     // 渲染初始状态
     renderEmptyBoard();
@@ -153,6 +155,28 @@ function renderEmptyBoard() {
   renderBoard(emptyBoard, emptyMask);
 }
 
+function ensurePauseUiReady() {
+  initTimer('#timer');
+  initPauseOverlay();
+}
+
+function hasRenderedBoard() {
+  return !!document.querySelector('#board .cell');
+}
+
+function warnPauseStateMismatch(action) {
+  console.warn(`[pause-flow] Cannot ${action} because runtime state is out of sync.`, {
+    action,
+    isPaused: getGlobalState('isPaused'),
+    hasPuzzle: !!gameStateManager.getSnapshot().puzzle,
+    hasRenderedBoard: hasRenderedBoard()
+  });
+
+  if (i18n) {
+    showWarning(i18n.t('errors.gameNotStarted'));
+  }
+}
+
 /**
  * 处理新游戏
  */
@@ -161,6 +185,8 @@ async function handleNewGame() {
     // 清除保存的游戏状态
     clearGameState();
     setGlobalState('isPaused', false);
+    ensurePauseUiReady();
+    hidePauseOverlay();
 
     setLoading(true);
     stopTimer();
@@ -385,7 +411,13 @@ function handleRecordsCleared() {
  */
 function handlePause() {
   const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
-  if (!puzzle || getGlobalState('isPaused')) return;
+  if (getGlobalState('isPaused')) return;
+  ensurePauseUiReady();
+
+  if (!puzzle) {
+    warnPauseStateMismatch('pause');
+    return;
+  }
 
   // 设置暂停状态
   setGlobalState('isPaused', true);
@@ -422,7 +454,17 @@ function handlePause() {
  */
 function handleResume() {
   const { puzzle, solution, givenMask } = gameStateManager.getSnapshot();
-  if (!puzzle || !getGlobalState('isPaused')) return;
+  if (!getGlobalState('isPaused')) return;
+  ensurePauseUiReady();
+
+  if (!puzzle) {
+    setGlobalState('isPaused', false);
+    hidePauseOverlay();
+    enableControls();
+    updatePauseButton(false, i18n ? i18n.t.bind(i18n) : null);
+    warnPauseStateMismatch('resume');
+    return;
+  }
 
   // 清除暂停状态
   setGlobalState('isPaused', false);
@@ -483,6 +525,7 @@ function handleTimerTick({ elapsed }) {
  * 检查并恢复保存的游戏状态
  */
 async function checkAndRestoreGameState() {
+  ensurePauseUiReady();
   const savedState = loadGameState();
   if (!savedState) return;
 

@@ -26,4 +26,14 @@ describe('pause overlay events', () => {
 
     expect(triggered).toBe(1);
   });
+
+  it('does not duplicate the overlay when initialized twice', async () => {
+    const { initPauseOverlay } = await import('../ui/pause-overlay.js');
+
+    initPauseOverlay();
+    initPauseOverlay();
+
+    expect(document.querySelectorAll('#pauseOverlay')).toHaveLength(1);
+    expect(document.querySelector('.pause-overlay-content')).not.toBeNull();
+  });
 });

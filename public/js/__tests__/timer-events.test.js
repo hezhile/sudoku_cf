@@ -29,7 +29,8 @@ describe('timer pause button events', () => {
     setGlobalState('isPaused', false);
     initTimer('#timer');
 
-    document.querySelector('.pause-btn').click();
+    expect(document.getElementById('pauseBtn')).not.toBeNull();
+    document.getElementById('pauseBtn').click();
 
     expect(triggered).toBe(1);
   });
@@ -47,9 +48,18 @@ describe('timer pause button events', () => {
     setGlobalState('isPaused', true);
     initTimer('#timer');
 
-    document.querySelector('.pause-btn').click();
+    document.getElementById('pauseBtn').click();
 
     expect(triggered).toBe(1);
+  });
+
+  it('reuses the same pause button when timer initialization runs twice', async () => {
+    const { initTimer } = await import('../ui/timer.js');
+
+    initTimer('#timer');
+    initTimer('#timer');
+
+    expect(document.querySelectorAll('#pauseBtn')).toHaveLength(1);
   });
 
   it('returns restored elapsed time before the timer resumes', async () => {

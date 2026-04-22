@@ -46,26 +46,29 @@ export function initTimer(selector = '#timer') {
  * 创建暂停按钮
  */
 function createPauseButton() {
-  // 如果已经创建过，直接返回
-  if (pauseButton) return;
-
-  pauseButton = document.createElement('button');
-  pauseButton.className = 'pause-btn';
-  pauseButton.innerHTML = '⏸️';
-  pauseButton.setAttribute('aria-label', '暂停游戏');
-  pauseButton.setAttribute('type', 'button');
-
-  // 绑定点击事件
-  pauseButton.addEventListener('click', handlePauseToggle);
-
-  // 添加到计时器区域
   const timerArea = document.getElementById('timerArea');
-  if (timerArea) {
-    // 使用 CSS 类而不是内联样式
-    timerArea.classList.add('timer-area-with-pause');
-    timerArea.appendChild(pauseButton);
-  } else {
+  if (!timerArea) {
     console.warn('Timer area not found for pause button');
+    return;
+  }
+
+  if (!pauseButton) {
+    pauseButton = document.createElement('button');
+    pauseButton.id = 'pauseBtn';
+    pauseButton.className = 'pause-btn';
+    pauseButton.innerHTML = '⏸️';
+    pauseButton.setAttribute('aria-label', '暂停游戏');
+    pauseButton.setAttribute('type', 'button');
+
+    // 绑定点击事件
+    pauseButton.addEventListener('click', handlePauseToggle);
+  }
+
+  // 使用 CSS 类而不是内联样式
+  timerArea.classList.add('timer-area-with-pause');
+
+  if (pauseButton.parentElement !== timerArea) {
+    timerArea.appendChild(pauseButton);
   }
 }
 
@@ -268,7 +271,7 @@ export function updatePauseButton(isPaused, t) {
  * @returns {boolean} 暂停按钮是否已创建
  */
 export function hasPauseButton() {
-  return pauseButton !== null;
+  return pauseButton !== null && pauseButton.isConnected;
 }
 
 /**
