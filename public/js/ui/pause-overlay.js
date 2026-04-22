@@ -10,6 +10,7 @@ import { EVENTS } from '../config/events.js';
 let overlayElement = null;
 let boardWrapper = null;
 let resumeButton = null;
+let resumeButtonListenerAdded = false;
 
 /**
  * 初始化暂停遮罩
@@ -23,8 +24,13 @@ export function initPauseOverlay(boardWrapperSelector = '.board-wrapper') {
     return;
   }
 
-  if (!overlayElement) {
-    overlayElement = document.getElementById('pauseOverlay') || document.createElement('div');
+  // 检查是否已经存在遮罩元素
+  const existingOverlay = document.getElementById('pauseOverlay');
+  if (existingOverlay) {
+    overlayElement = existingOverlay;
+  } else if (!overlayElement) {
+    // 创建新的遮罩元素
+    overlayElement = document.createElement('div');
     overlayElement.id = 'pauseOverlay';
     overlayElement.className = 'pause-overlay';
     overlayElement.innerHTML = `
@@ -44,8 +50,9 @@ export function initPauseOverlay(boardWrapperSelector = '.board-wrapper') {
   }
 
   resumeButton = overlayElement.querySelector('#resumeBtn');
-  if (resumeButton) {
-    resumeButton.onclick = handleResume;
+  if (resumeButton && !resumeButtonListenerAdded) {
+    resumeButton.addEventListener('click', handleResume);
+    resumeButtonListenerAdded = true;
   }
 }
 

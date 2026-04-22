@@ -52,7 +52,12 @@ function createPauseButton() {
     return;
   }
 
-  if (!pauseButton) {
+  // 检查是否已经存在暂停按钮
+  const existingButton = document.getElementById('pauseBtn');
+  if (existingButton) {
+    pauseButton = existingButton;
+  } else {
+    // 创建新的暂停按钮
     pauseButton = document.createElement('button');
     pauseButton.id = 'pauseBtn';
     pauseButton.className = 'pause-btn';
