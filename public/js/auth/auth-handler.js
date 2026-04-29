@@ -69,17 +69,30 @@ export async function initAuth() {
       syncBtn.addEventListener('click', handleManualSync);
     }
 
-    // 读取当前 session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      currentSession = session;
-      setLoggedInUI(session.user);
-      emit(EVENTS.AUTH_LOGIN, { user: session.user });
-    } else {
-      setLoggedOutUI();
+    // 显式处理 PKCE code 交换（magic link 回调时 URL 带 ?code=xxx）
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      try {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          console.error('PKCE code 交换失败:', exchangeError);
+          showError(getI18n().t('errors.authFailed'));
+        }
+        // 清除 URL 中的 auth 相关参数
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('code');
+        cleanUrl.searchParams.delete('type');
+        cleanUrl.searchParams.delete('error');
+        cleanUrl.searchParams.delete('error_code');
+        cleanUrl.searchParams.delete('error_description');
+        window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.hash);
+      } catch (exchangeErr) {
+        console.error('PKCE code 交换异常:', exchangeErr);
+      }
     }
 
-    // 监听登录/登出事件
+    // 监听登录/登出事件（必须在 getSession 之前注册）
     supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         currentSession = session;
@@ -91,6 +104,16 @@ export async function initAuth() {
         emit(EVENTS.AUTH_LOGOUT);
       }
     });
+
+    // 读取当前 session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentSession = session;
+      setLoggedInUI(session.user);
+      emit(EVENTS.AUTH_LOGIN, { user: session.user });
+    } else {
+      setLoggedOutUI();
+    }
   } catch (error) {
     console.error('认证模块初始化失败:', error);
     showError(getI18n().t('errors.authFailed'));
@@ -122,7 +145,7 @@ async function handleLogin() {
     loginBtn.disabled = true;
     loginBtn.textContent = getI18n().t('buttons.sending');
 
-    const redirectTo = window.location.href;
+    const redirectTo = window.location.origin + window.location.pathname;
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo }
